@@ -1525,3 +1525,351 @@ h3 { font-size: 16px; font-weight: 700; color: var(--ink); }
   .today-card { padding: 24px 22px; }
   .shot-frame { height: 216px; }
 }
+
+/* =========================================================
+   V2.2 视觉升级 — 磨砂玻璃 + 糖果质感
+   只调整表面、阴影、高光、过渡；配色与布局保持原样。
+   ========================================================= */
+
+:root {
+  --glass-blur: 18px;
+  --glass-line: rgba(255, 255, 255, .78);
+  --sheen: linear-gradient(180deg, rgba(255, 255, 255, .72) 0%, rgba(255, 255, 255, .14) 40%, rgba(255, 255, 255, 0) 66%);
+  --shadow-glass: 0 18px 40px -24px rgba(30, 58, 44, .34), 0 4px 12px -6px rgba(30, 58, 44, .08);
+  --shadow-candy: inset 0 1px 0 rgba(255, 255, 255, .5), inset 0 -2px 4px rgba(20, 45, 32, .14), 0 8px 18px -10px rgba(35, 64, 48, .42);
+}
+
+/* 背景：奶油底 + 极淡的糖果色光斑，给磨砂层提供层次 */
+body {
+  background-color: var(--cream);
+  background-image:
+    radial-gradient(120% 70% at 10% -6%, rgba(127, 159, 132, .26), rgba(127, 159, 132, 0) 64%),
+    radial-gradient(90% 58% at 98% 2%, rgba(231, 201, 131, .30), rgba(231, 201, 131, 0) 60%),
+    radial-gradient(70% 50% at 30% 48%, rgba(127, 159, 132, .12), rgba(127, 159, 132, 0) 70%),
+    radial-gradient(110% 70% at 48% 106%, rgba(217, 145, 127, .20), rgba(217, 145, 127, 0) 62%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+/* ---------- 玻璃面板 ---------- */
+
+.card,
+.stat {
+  background-color: rgba(255, 255, 255, .6);
+  background-image: var(--sheen);
+  border-color: var(--glass-line);
+  box-shadow: var(--shadow-glass), inset 0 1px 0 rgba(255, 255, 255, .95), inset 0 0 0 1px rgba(255, 255, 255, .38);
+}
+
+.blister-pack {
+  background-color: rgba(252, 250, 243, .6);
+  background-image: var(--sheen);
+  border-color: rgba(255, 255, 255, .8);
+  box-shadow: 0 12px 26px -18px rgba(120, 108, 80, .42), inset 0 1px 0 rgba(255, 255, 255, .9);
+}
+
+.dev-panel {
+  background-color: rgba(247, 249, 244, .68);
+  background-image: var(--sheen);
+  border-color: rgba(150, 170, 145, .55);
+  box-shadow: 0 10px 22px -18px rgba(30, 58, 44, .4), inset 0 1px 0 rgba(255, 255, 255, .9);
+}
+
+.profile-card {
+  background-color: rgba(237, 242, 234, .68);
+  background-image: var(--sheen);
+  border-color: var(--glass-line);
+  box-shadow: var(--shadow-glass), inset 0 1px 0 rgba(255, 255, 255, .9);
+}
+
+.confirm-opt {
+  background-color: rgba(255, 255, 255, .66);
+  background-image: var(--sheen);
+  border-color: rgba(255, 255, 255, .9);
+  box-shadow: 0 10px 20px -16px rgba(30, 58, 44, .4), inset 0 1px 0 rgba(255, 255, 255, .95);
+}
+.confirm-opt.is-on {
+  background-color: rgba(237, 242, 234, .88);
+  border-color: rgba(76, 112, 89, .38);
+}
+
+.notice {
+  border-color: rgba(255, 255, 255, .7);
+  box-shadow: 0 10px 22px -18px rgba(30, 58, 44, .45), inset 0 1px 0 rgba(255, 255, 255, .8);
+}
+.notice.amber { background-color: rgba(246, 235, 213, .8); }
+.notice.plain { background-color: rgba(246, 244, 237, .72); }
+.notice.ok { background-color: rgba(237, 242, 234, .82); }
+
+.banner {
+  background-color: rgba(246, 235, 213, .78);
+  background-image: var(--sheen);
+  box-shadow: 0 8px 18px -14px rgba(138, 106, 50, .5), inset 0 1px 0 rgba(255, 255, 255, .9);
+}
+
+/* 今日卡：玻璃底 + 顶部高光 + 落地阴影 */
+.today-card {
+  background-color: rgba(237, 242, 234, .62);
+  background-image: var(--sheen);
+  border-color: rgba(255, 255, 255, .68);
+  box-shadow:
+    0 26px 48px -28px rgba(30, 58, 44, .42),
+    0 6px 14px -8px rgba(30, 58, 44, .1),
+    inset 0 1px 0 rgba(255, 255, 255, .9),
+    inset 0 0 0 1px rgba(255, 255, 255, .4),
+    inset 0 -14px 26px -22px rgba(76, 112, 89, .35);
+}
+.today-card.is-done { background-color: rgba(237, 242, 234, .72); }
+.today-card.is-missed { background-color: rgba(244, 228, 219, .8); border-color: rgba(255, 255, 255, .62); }
+.today-card.is-uncertain,
+.today-card.is-pending { background-color: rgba(246, 235, 213, .8); }
+.today-card.is-empty { background-color: rgba(243, 246, 240, .72); }
+.today-card.is-break { background-color: rgba(238, 246, 250, .74); }
+.today-card.is-paused { background-color: rgba(242, 245, 247, .75); }
+
+/* 底部导航 & 弹层：真正的磨砂 */
+.tabbar {
+  background-color: rgba(255, 255, 255, .7);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .86), rgba(255, 255, 255, .56));
+  border-top: 1px solid rgba(255, 255, 255, .9);
+  box-shadow: 0 -14px 34px -22px rgba(30, 58, 44, .45), inset 0 1px 0 rgba(255, 255, 255, .95);
+}
+.sheet {
+  background-color: rgba(255, 255, 255, .84);
+  background-image: var(--sheen);
+  border: 1px solid rgba(255, 255, 255, .9);
+  border-bottom: 0;
+  box-shadow: 0 -24px 54px -24px rgba(24, 38, 30, .4), inset 0 1px 0 rgba(255, 255, 255, .95);
+}
+.sheet-mask { background: rgba(24, 38, 30, .32); }
+
+@supports ((-webkit-backdrop-filter: blur(2px)) or (backdrop-filter: blur(2px))) {
+  .card,
+  .stat,
+  .blister-pack,
+  .dev-panel,
+  .profile-card,
+  .confirm-opt,
+  .notice,
+  .sheet,
+  .tabbar,
+  .today-card {
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.35);
+    backdrop-filter: blur(var(--glass-blur)) saturate(1.35);
+  }
+  .tabbar { --glass-blur: 22px; }
+  .sheet { --glass-blur: 26px; }
+  .sheet-mask {
+    -webkit-backdrop-filter: blur(4px) saturate(1.1);
+    backdrop-filter: blur(4px) saturate(1.1);
+  }
+}
+
+/* ---------- 糖果按钮 ---------- */
+
+.btn {
+  border: 1px solid rgba(255, 255, 255, .32);
+  box-shadow: var(--shadow-candy);
+  transition: transform .15s, box-shadow .2s, opacity .15s;
+}
+.btn.primary {
+  background-color: var(--sage-deep);
+  background-image: linear-gradient(180deg, #648a72 0%, #4c7059 56%, #42634e 100%);
+  border-color: rgba(255, 255, 255, .24);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .4),
+    inset 0 -2px 4px rgba(16, 38, 26, .3),
+    0 14px 24px -12px rgba(35, 64, 48, .6),
+    0 3px 6px -3px rgba(30, 58, 44, .18);
+}
+.btn.ghost {
+  background-color: rgba(243, 246, 240, .82);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .9), rgba(255, 255, 255, .28));
+  border-color: rgba(255, 255, 255, .85);
+}
+.btn.plain {
+  background-color: rgba(255, 255, 255, .74);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .96), rgba(255, 255, 255, .4));
+  border-color: rgba(255, 255, 255, .9);
+}
+.btn.danger {
+  background-color: rgba(255, 255, 255, .74);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .96), rgba(255, 255, 255, .38));
+  border-color: rgba(236, 211, 199, .9);
+}
+.btn:active {
+  transform: scale(.975);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), inset 0 2px 6px rgba(20, 45, 32, .16);
+}
+
+/* 相机主按钮：果冻质感 */
+.shutter {
+  border: 1px solid rgba(255, 255, 255, .26);
+  background-image: radial-gradient(circle at 32% 22%, #71997f 0%, #4c7059 48%, #3f604b 100%);
+  box-shadow:
+    inset 0 2px 1px rgba(255, 255, 255, .42),
+    inset 0 -12px 18px -12px rgba(16, 38, 26, .5),
+    0 20px 34px -14px rgba(35, 64, 48, .55),
+    0 6px 12px -4px rgba(30, 58, 44, .14);
+}
+.shutter.is-taken { background-image: radial-gradient(circle at 32% 22%, #83a98b 0%, #5f8468 52%, #52765c 100%); }
+.shutter.is-missed { background-image: radial-gradient(circle at 32% 22%, #d3a08c 0%, #b9826d 52%, #a9725d 100%); }
+.shutter.is-uncertain { background-image: radial-gradient(circle at 32% 22%, #d3b873 0%, #bf9d52 52%, #ad8d45 100%); }
+.shutter.is-break,
+.shutter.is-paused { background-image: radial-gradient(circle at 32% 22%, #8badc1 0%, #6f93aa 52%, #61859c 100%); }
+.shutter.is-empty,
+.shutter.is-pending { background-image: radial-gradient(circle at 32% 22%, #71997f 0%, #4c7059 52%, #3f604b 100%); }
+.shutter:active {
+  transform: scale(.965);
+  box-shadow:
+    inset 0 2px 6px rgba(16, 38, 26, .35),
+    0 8px 16px -10px rgba(35, 64, 48, .5);
+}
+
+/* 状态胶囊：糖果高光 */
+.status {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), inset 0 0 0 1px rgba(255, 255, 255, .45), 0 3px 8px -5px rgba(30, 58, 44, .3);
+}
+.record-switch {
+  box-shadow: inset 0 1px 2px rgba(30, 58, 44, .1), inset 0 -1px 0 rgba(255, 255, 255, .7);
+}
+.rs-opt.is-on {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(255, 255, 255, .8));
+  box-shadow: 0 3px 7px -3px rgba(30, 58, 44, .28), inset 0 1px 0 #fff;
+}
+
+/* ---------- 开关 / 选项卡 / 日历 ---------- */
+
+.switch {
+  background-image: linear-gradient(180deg, #d3dad1, #e7ebe3);
+  box-shadow: inset 0 1px 2px rgba(30, 58, 44, .16), inset 0 -1px 0 rgba(255, 255, 255, .7);
+}
+.switch.is-on {
+  background-image: linear-gradient(180deg, #6d9474, #8aab8f);
+  box-shadow: inset 0 1px 2px rgba(30, 58, 44, .22), 0 3px 8px -3px rgba(76, 112, 89, .55);
+}
+.switch:after {
+  background-image: radial-gradient(circle at 34% 28%, #ffffff, #f4f1e8);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, .16), inset 0 -1px 0 rgba(0, 0, 0, .05);
+}
+
+.cal-nav {
+  background-image: linear-gradient(180deg, #ffffff, rgba(243, 246, 240, .72));
+  box-shadow: inset 0 1px 0 #fff, 0 4px 10px -6px rgba(30, 58, 44, .4);
+}
+.cal-day {
+  transition: transform .15s, box-shadow .2s;
+}
+.cal-day.is-taken,
+.cal-day.is-not-taken,
+.cal-day.is-uncertain,
+.cal-day.is-paused {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .6), rgba(255, 255, 255, .06));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .85), 0 3px 7px -4px rgba(30, 58, 44, .28);
+}
+.cal-day.is-today {
+  box-shadow:
+    inset 0 0 0 1.5px var(--sage-deep),
+    inset 0 1px 0 rgba(255, 255, 255, .7),
+    0 4px 10px -5px rgba(76, 112, 89, .45);
+}
+.cal-day:active { transform: scale(.94); }
+
+/* ---------- 药板：糖衣药片 ---------- */
+
+.blister-groove {
+  background-image: linear-gradient(180deg, #f5f0e4, #eee8da);
+  box-shadow: inset 0 2px 3px rgba(150, 138, 108, .24), 0 1px 0 rgba(255, 255, 255, .85);
+}
+.bpill-dot {
+  background-image: radial-gradient(circle at 34% 26%, #ffffff 0%, #fcf8ef 52%, #f5efe0 100%);
+  box-shadow:
+    inset 0 2px 2px rgba(255, 255, 255, .95),
+    inset 0 -3px 5px rgba(150, 138, 108, .16),
+    0 2px 4px -1px rgba(120, 110, 85, .2);
+}
+.bpill.is-taken .bpill-dot {
+  background-image: radial-gradient(circle at 32% 24%, #8bae92 0%, #6f9475 56%, #5f8468 100%);
+  box-shadow: inset 0 2px 2px rgba(255, 255, 255, .45), inset 0 -3px 5px rgba(45, 70, 50, .22), 0 2px 4px -1px rgba(90, 105, 85, .3);
+}
+.bpill.is-pending .bpill-dot {
+  background-image: radial-gradient(circle at 32% 24%, #fdf4d2 0%, #f6e6ae 56%, #eeda98 100%);
+  box-shadow: inset 0 2px 2px rgba(255, 255, 255, .8), inset 0 -3px 5px rgba(180, 155, 90, .2), 0 2px 4px -1px rgba(150, 130, 70, .22);
+}
+.bpill.is-missed .bpill-dot {
+  background-image: radial-gradient(circle at 32% 24%, #eab7a7 0%, #d8917f 56%, #c9826f 100%);
+  box-shadow: inset 0 2px 2px rgba(255, 255, 255, .4), inset 0 -3px 5px rgba(130, 60, 40, .22), 0 2px 4px -1px rgba(140, 85, 65, .28);
+}
+.bpill.is-uncertain .bpill-dot {
+  background-image: radial-gradient(circle at 32% 24%, #fae7f0 0%, #f1cfdf 56%, #e6bcd1 100%);
+  box-shadow: inset 0 2px 2px rgba(255, 255, 255, .7), inset 0 -3px 5px rgba(150, 90, 120, .16), 0 2px 4px -1px rgba(150, 100, 125, .2);
+}
+.bpill.is-upcoming .bpill-dot {
+  background-image: radial-gradient(circle at 34% 26%, #ffffff 0%, #fffdf8 58%, #f7f2e6 100%);
+}
+.bpill.is-break .bpill-dot {
+  background-image: radial-gradient(circle at 32% 24%, #ecf5fa 0%, #dcebf5 56%, #cde1ee 100%);
+}
+.bpill.is-today .bpill-dot {
+  box-shadow:
+    0 0 0 2px rgba(76, 112, 89, .42),
+    inset 0 2px 2px rgba(255, 255, 255, .55),
+    0 2px 5px -1px rgba(120, 110, 85, .28);
+}
+
+.progress {
+  background: rgba(238, 241, 234, .9);
+  box-shadow: inset 0 1px 2px rgba(30, 58, 44, .12);
+}
+.progress b {
+  background-image: linear-gradient(180deg, #96b39a, #7f9f84 60%, #71947a);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 1px 3px rgba(76, 112, 89, .35);
+}
+
+/* ---------- 表单 / 图标 / 杂项 ---------- */
+
+.field input,
+.field select,
+.field textarea,
+.sheet textarea {
+  background-color: rgba(255, 255, 255, .72);
+  border-color: rgba(255, 255, 255, .9);
+  box-shadow: inset 0 1px 2px rgba(30, 58, 44, .08), inset 0 -1px 0 rgba(255, 255, 255, .9), 0 1px 0 rgba(255, 255, 255, .9);
+}
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: rgba(127, 159, 132, .8);
+  box-shadow: inset 0 1px 2px rgba(30, 58, 44, .06), 0 0 0 3px rgba(127, 159, 132, .18);
+}
+
+.logo {
+  background-image: linear-gradient(160deg, #628871 0%, #4c7059 55%, #41624d 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .42), inset 0 -3px 6px rgba(16, 38, 26, .32), 0 8px 16px -8px rgba(35, 64, 48, .6);
+}
+.mascot {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .9),
+    inset 0 -6px 12px -8px rgba(30, 58, 44, .18),
+    0 10px 20px -12px rgba(30, 58, 44, .35);
+}
+.menu-ico,
+.opt-ico {
+  box-shadow: inset 0 1px 0 #fff, 0 3px 7px -4px rgba(30, 58, 44, .3);
+}
+.confirm-opt.is-on .opt-ico {
+  background-image: linear-gradient(180deg, #678d74, #4c7059);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .38), 0 5px 12px -5px rgba(35, 64, 48, .6);
+}
+.profile-ico {
+  box-shadow: inset 0 1px 0 #fff, 0 4px 10px -6px rgba(30, 58, 44, .35);
+}
+.dev-btn {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8), 0 3px 7px -4px rgba(30, 58, 44, .3);
+}
+.dev-btn:active { transform: scale(.97); }
+.menu-item:active { background-color: rgba(255, 255, 255, .35); }
+.toast {
+  background-image: linear-gradient(180deg, #2f4a38, #24392c);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 14px 28px -12px rgba(24, 38, 30, .6);
+}
