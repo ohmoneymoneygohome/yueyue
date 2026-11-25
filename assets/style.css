@@ -1535,6 +1535,7 @@ h3 { font-size: 16px; font-weight: 700; color: var(--ink); }
   --glass-blur: 18px;
   --glass-line: rgba(255, 255, 255, .78);
   --sheen: linear-gradient(180deg, rgba(255, 255, 255, .72) 0%, rgba(255, 255, 255, .14) 40%, rgba(255, 255, 255, 0) 66%);
+  --candy-white: linear-gradient(168deg, rgba(255, 255, 255, .46) 0%, rgba(246, 250, 243, .24) 46%, rgba(222, 235, 220, .38) 100%);
   --shadow-glass: 0 18px 40px -24px rgba(30, 58, 44, .34), 0 4px 12px -6px rgba(30, 58, 44, .08);
   --shadow-candy: inset 0 1px 0 rgba(255, 255, 255, .5), inset 0 -2px 4px rgba(20, 45, 32, .14), 0 8px 18px -10px rgba(35, 64, 48, .42);
 }
@@ -1555,15 +1556,15 @@ body {
 
 .card,
 .stat {
-  background-color: rgba(255, 255, 255, .6);
-  background-image: var(--sheen);
+  background-color: rgba(255, 255, 255, .5);
+  background-image: var(--sheen), var(--candy-white);
   border-color: var(--glass-line);
   box-shadow: var(--shadow-glass), inset 0 1px 0 rgba(255, 255, 255, .95), inset 0 0 0 1px rgba(255, 255, 255, .38);
 }
 
 .blister-pack {
-  background-color: rgba(252, 250, 243, .6);
-  background-image: var(--sheen);
+  background-color: rgba(252, 250, 243, .44);
+  background-image: var(--sheen), linear-gradient(170deg, rgba(255, 255, 255, .5) 0%, rgba(250, 247, 238, .18) 44%, rgba(226, 234, 216, .4) 100%);
   border-color: rgba(255, 255, 255, .8);
   box-shadow: 0 12px 26px -18px rgba(120, 108, 80, .42), inset 0 1px 0 rgba(255, 255, 255, .9);
 }
@@ -1576,20 +1577,21 @@ body {
 }
 
 .profile-card {
-  background-color: rgba(237, 242, 234, .68);
-  background-image: var(--sheen);
+  background-color: rgba(237, 242, 234, .5);
+  background-image: var(--sheen), linear-gradient(165deg, rgba(255, 255, 255, .46) 0%, rgba(234, 242, 231, .2) 48%, rgba(204, 222, 207, .4) 100%);
   border-color: var(--glass-line);
   box-shadow: var(--shadow-glass), inset 0 1px 0 rgba(255, 255, 255, .9);
 }
 
 .confirm-opt {
-  background-color: rgba(255, 255, 255, .66);
-  background-image: var(--sheen);
+  background-color: rgba(255, 255, 255, .54);
+  background-image: var(--sheen), linear-gradient(170deg, rgba(255, 255, 255, .5) 0%, rgba(246, 250, 243, .18) 50%, rgba(218, 232, 216, .36) 100%);
   border-color: rgba(255, 255, 255, .9);
   box-shadow: 0 10px 20px -16px rgba(30, 58, 44, .4), inset 0 1px 0 rgba(255, 255, 255, .95);
 }
 .confirm-opt.is-on {
-  background-color: rgba(237, 242, 234, .88);
+  background-color: rgba(237, 242, 234, .78);
+  background-image: var(--sheen), linear-gradient(170deg, rgba(255, 255, 255, .5) 0%, rgba(230, 240, 227, .22) 50%, rgba(196, 218, 199, .4) 100%);
   border-color: rgba(76, 112, 89, .38);
 }
 
@@ -1609,8 +1611,8 @@ body {
 
 /* 今日卡：玻璃底 + 顶部高光 + 落地阴影 */
 .today-card {
-  background-color: rgba(237, 242, 234, .62);
-  background-image: var(--sheen);
+  background-color: rgba(237, 242, 234, .56);
+  background-image: var(--sheen), linear-gradient(168deg, rgba(255, 255, 255, .42) 0%, rgba(233, 241, 230, .2) 46%, rgba(201, 221, 204, .38) 100%);
   border-color: rgba(255, 255, 255, .68);
   box-shadow:
     0 26px 48px -28px rgba(30, 58, 44, .42),
@@ -1619,24 +1621,43 @@ body {
     inset 0 0 0 1px rgba(255, 255, 255, .4),
     inset 0 -14px 26px -22px rgba(76, 112, 89, .35);
 }
-.today-card.is-done { background-color: rgba(237, 242, 234, .72); }
-.today-card.is-missed { background-color: rgba(244, 228, 219, .8); border-color: rgba(255, 255, 255, .62); }
+.today-card.is-done {
+  background-color: rgba(237, 242, 234, .58);
+  background-image: var(--sheen), linear-gradient(168deg, rgba(255, 255, 255, .44) 0%, rgba(228, 239, 225, .22) 46%, rgba(193, 216, 197, .4) 100%);
+}
+.today-card.is-missed {
+  background-color: rgba(244, 228, 219, .68);
+  background-image: var(--sheen), linear-gradient(168deg, rgba(255, 255, 255, .42) 0%, rgba(243, 224, 214, .2) 46%, rgba(230, 192, 176, .42) 100%);
+  border-color: rgba(255, 255, 255, .62);
+}
 .today-card.is-uncertain,
-.today-card.is-pending { background-color: rgba(246, 235, 213, .8); }
-.today-card.is-empty { background-color: rgba(243, 246, 240, .72); }
-.today-card.is-break { background-color: rgba(238, 246, 250, .74); }
-.today-card.is-paused { background-color: rgba(242, 245, 247, .75); }
+.today-card.is-pending {
+  background-color: rgba(246, 235, 213, .68);
+  background-image: var(--sheen), linear-gradient(168deg, rgba(255, 255, 255, .44) 0%, rgba(245, 232, 205, .2) 46%, rgba(236, 214, 165, .42) 100%);
+}
+.today-card.is-empty {
+  background-color: rgba(243, 246, 240, .54);
+  background-image: var(--sheen), linear-gradient(168deg, rgba(255, 255, 255, .46) 0%, rgba(240, 246, 237, .2) 46%, rgba(214, 229, 213, .36) 100%);
+}
+.today-card.is-break {
+  background-color: rgba(238, 246, 250, .6);
+  background-image: var(--sheen), linear-gradient(168deg, rgba(255, 255, 255, .44) 0%, rgba(231, 242, 248, .22) 46%, rgba(196, 220, 235, .4) 100%);
+}
+.today-card.is-paused {
+  background-color: rgba(242, 245, 247, .62);
+  background-image: var(--sheen), linear-gradient(168deg, rgba(255, 255, 255, .44) 0%, rgba(235, 240, 244, .22) 46%, rgba(205, 217, 225, .4) 100%);
+}
 
 /* 底部导航 & 弹层：真正的磨砂 */
 .tabbar {
-  background-color: rgba(255, 255, 255, .7);
-  background-image: linear-gradient(180deg, rgba(255, 255, 255, .86), rgba(255, 255, 255, .56));
+  background-color: rgba(255, 255, 255, .6);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .88), rgba(244, 248, 241, .5));
   border-top: 1px solid rgba(255, 255, 255, .9);
   box-shadow: 0 -14px 34px -22px rgba(30, 58, 44, .45), inset 0 1px 0 rgba(255, 255, 255, .95);
 }
 .sheet {
-  background-color: rgba(255, 255, 255, .84);
-  background-image: var(--sheen);
+  background-color: rgba(255, 255, 255, .74);
+  background-image: var(--sheen), linear-gradient(178deg, rgba(255, 255, 255, .5) 0%, rgba(247, 250, 244, .2) 52%, rgba(228, 238, 225, .34) 100%);
   border: 1px solid rgba(255, 255, 255, .9);
   border-bottom: 0;
   box-shadow: 0 -24px 54px -24px rgba(24, 38, 30, .4), inset 0 1px 0 rgba(255, 255, 255, .95);
@@ -1674,10 +1695,10 @@ body {
 }
 .btn.primary {
   background-color: var(--sage-deep);
-  background-image: linear-gradient(180deg, #648a72 0%, #4c7059 56%, #42634e 100%);
+  background-image: linear-gradient(180deg, #70977c 0%, #4c7059 52%, #3d5d49 100%);
   border-color: rgba(255, 255, 255, .24);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .4),
+    inset 0 1px 0 rgba(255, 255, 255, .42),
     inset 0 -2px 4px rgba(16, 38, 26, .3),
     0 14px 24px -12px rgba(35, 64, 48, .6),
     0 3px 6px -3px rgba(30, 58, 44, .18);
@@ -1764,8 +1785,20 @@ body {
 .cal-day.is-not-taken,
 .cal-day.is-uncertain,
 .cal-day.is-paused {
-  background-image: linear-gradient(180deg, rgba(255, 255, 255, .6), rgba(255, 255, 255, .06));
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .62), rgba(255, 255, 255, .04));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .85), 0 3px 7px -4px rgba(30, 58, 44, .28);
+}
+.cal-day.is-taken {
+  background-color: rgba(201, 221, 204, .55);
+  background-image: linear-gradient(170deg, rgba(255, 255, 255, .68) 0%, rgba(214, 231, 216, .18) 52%, rgba(178, 205, 183, .42) 100%);
+}
+.cal-day.is-not-taken {
+  background-color: rgba(236, 205, 191, .55);
+  background-image: linear-gradient(170deg, rgba(255, 255, 255, .66) 0%, rgba(240, 216, 205, .18) 52%, rgba(224, 181, 163, .44) 100%);
+}
+.cal-day.is-uncertain {
+  background-color: rgba(243, 214, 228, .55);
+  background-image: linear-gradient(170deg, rgba(255, 255, 255, .66) 0%, rgba(245, 225, 235, .18) 52%, rgba(232, 193, 212, .44) 100%);
 }
 .cal-day.is-today {
   box-shadow:
