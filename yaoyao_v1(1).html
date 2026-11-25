@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f6f7f1">
+<title>药药 · 拍一张，记住今天</title>
+<style>
+:root{
+  --bg:#f6f7f1;--paper:#fff;--ink:#26372d;--muted:#829087;--line:#e9ede6;
+  --green:#315e45;--green2:#6f9877;--pale:#eaf1e8;--yellow:#f3e8c9;
+  --red:#f7e6e2;--shadow:0 14px 40px rgba(35,57,42,.07);--radius:22px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.app{max-width:1120px;margin:auto;min-height:100vh;padding:26px 30px 50px}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:34px}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:42px;height:42px;border-radius:15px;background:var(--green);color:white;display:grid;place-items:center;font-size:23px}
+.brand-name{font-weight:800;font-size:22px;letter-spacing:.03em}
+.brand-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.top-right{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px}
+.avatar{width:34px;height:34px;border-radius:50%;background:#e4ece1;display:grid;place-items:center;color:var(--green);font-weight:700}
+.layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:28px}
+.sidebar{display:flex;flex-direction:column;gap:7px}
+.nav-label{font-size:10px;letter-spacing:.14em;color:#a0aaa1;padding:8px 13px 10px}
+.nav{border:0;background:transparent;color:#7a877e;text-align:left;padding:13px 15px;border-radius:13px;display:flex;align-items:center;gap:12px;font-size:14px}
+.nav .ico{font-size:17px;width:20px;text-align:center}
+.nav.active{background:var(--pale);color:var(--green);font-weight:700}
+.side-note{margin-top:auto;background:#edf2e9;border-radius:18px;padding:17px;color:#607464;font-size:12px;line-height:1.7}
+.content{min-width:0}
+.page{display:none;animation:fade .22s ease}
+.page.active{display:block}
+@keyframes fade{from{opacity:.3;transform:translateY(5px)}to{opacity:1;transform:none}}
+.eyebrow{font-size:11px;letter-spacing:.14em;color:var(--green2);font-weight:800;text-transform:uppercase}
+h1{font-size:32px;letter-spacing:-.04em;margin:9px 0 7px}
+.lead{color:var(--muted);font-size:14px;line-height:1.7;margin:0}
+.hero{margin-top:25px;padding:28px 30px;background:var(--pale);border-radius:26px;display:grid;grid-template-columns:1fr 190px;gap:20px;align-items:center;overflow:hidden;position:relative}
+.hero h2{font-size:23px;margin:0 0 8px}
+.hero p{color:#6e8171;font-size:13px;line-height:1.7;margin:0;max-width:480px}
+.hero-art{height:130px;display:grid;place-items:center;position:relative}
+.blister{width:145px;height:106px;border:1px solid #c4d2c1;border-radius:17px;background:rgba(255,255,255,.58);padding:13px;display:grid;grid-template-columns:repeat(7,1fr);gap:6px;transform:rotate(-8deg);box-shadow:0 12px 22px #b9cbb744}
+.blister i{border-radius:50%;background:linear-gradient(145deg,#fff,#dbe7d9);border:1px solid #c6d5c4}
+.blister i.empty{background:#c5d1c4;box-shadow:inset 0 2px 5px #839685}
+.btn{border:0;border-radius:999px;padding:13px 21px;font-size:13px;font-weight:700;transition:.18s}
+.btn:hover{transform:translateY(-1px);filter:brightness(.98)}
+.btn.primary{background:var(--green);color:white}
+.btn.secondary{background:#e9efe7;color:var(--green)}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:#607064}
+.btn.small{padding:9px 15px;font-size:12px}
+.hero .btn{margin-top:18px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:17px}
+.stat,.card{background:var(--paper);border:1px solid #edf0ea;border-radius:var(--radius);box-shadow:var(--shadow)}
+.stat{padding:19px 20px}
+.stat-label{font-size:12px;color:var(--muted)}
+.stat-value{font-size:25px;font-weight:800;margin:8px 0 3px;letter-spacing:-.04em}
+.stat-foot{font-size:11px;color:#9aa49b}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin:29px 0 13px}
+.section-head h3{font-size:16px;margin:0}
+.card{padding:21px}
+.today-row{display:flex;align-items:center;gap:16px}
+.date-chip{width:54px;height:58px;border-radius:15px;background:#f1f4ee;display:grid;place-items:center;color:var(--green);font-weight:800}
+.date-chip span{font-size:10px;display:block;font-weight:500}
+.today-info{flex:1}
+.today-info strong{font-size:14px}
+.today-info p{font-size:12px;color:var(--muted);margin:5px 0 0}
+.status{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:7px 10px;font-size:11px;background:#f2f4ef;color:#6e7b70}
+.status:before{content:"";width:6px;height:6px;border-radius:50%;background:#a6b0a6}
+.status.ok{background:#eaf2e8;color:var(--green)}.status.ok:before{background:#6e9877}
+.status.warn{background:#f7f0df;color:#987b36}.status.warn:before{background:#c5a34d}
+.progress-wrap{margin-top:19px}
+.progress-top{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:8px}
+.progress{height:7px;background:#edf0ea;border-radius:20px;overflow:hidden}
+.progress b{height:100%;display:block;background:var(--green2);border-radius:20px;transition:width .3s}
+.two-col{display:grid;grid-template-columns:1.15fr .85fr;gap:15px}
+.quick-card{display:flex;align-items:center;gap:14px}
+.quick-icon{width:43px;height:43px;border-radius:14px;background:#eff3ed;display:grid;place-items:center;font-size:19px}
+.quick-card strong{font-size:13px}
+.quick-card p{font-size:11px;color:var(--muted);margin:4px 0 0}
+.page-head{margin-bottom:22px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.field{display:flex;flex-direction:column;gap:8px;margin-bottom:15px}
+.field label{font-size:12px;color:#68766b;font-weight:650}
+.field input,.field select,.field textarea{border:1px solid #e5eae2;background:#fbfcf9;border-radius:12px;padding:12px 13px;outline:none;color:var(--ink);font-size:13px;width:100%}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:#8ca991;box-shadow:0 0 0 3px #eaf1e8}
+.help{font-size:11px;color:#929e94;line-height:1.6;margin-top:2px}
+.notice{background:#f8f4e8;border:1px solid #eee5cb;color:#857447;padding:13px 15px;border-radius:13px;font-size:12px;line-height:1.7;margin:15px 0}
+.camera-box{background:#edf2e9;border:1px dashed #b9cbb8;border-radius:20px;min-height:280px;display:grid;place-items:center;text-align:center;padding:18px;overflow:hidden}
+.camera-box img{max-width:100%;max-height:390px;object-fit:contain;border-radius:12px}
+.camera-empty .cam-icon{font-size:48px;color:#78947b}
+.camera-empty p{font-size:13px;color:#728274;line-height:1.7}
+.camera-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.review-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.review-image{background:#f0f3ed;border-radius:16px;min-height:220px;display:grid;place-items:center;overflow:hidden;color:#91a092;font-size:12px}
+.review-image img{width:100%;max-height:330px;object-fit:contain}
+.choice{display:flex;gap:9px;flex-wrap:wrap;margin:14px 0}
+.choice button{border:1px solid #e3e9e1;background:white;border-radius:12px;padding:11px 13px;color:#627064;font-size:12px}
+.choice button.selected{border-color:#739879;background:#edf4eb;color:var(--green);font-weight:700}
+.calendar-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}
+.calendar-grid div{text-align:center;padding:12px 3px;border-radius:12px;font-size:12px}
+.calendar-grid .weekday{color:#9aa49b;font-size:10px}
+.calendar-grid .day{background:#f8f9f6;color:#667369;min-height:43px}
+.calendar-grid .day.done{background:#e9f1e7;color:#315e45;font-weight:700}
+.calendar-grid .day.pending{background:#f7f0df;color:#987b36}
+.calendar-grid .day.today{outline:1px solid #78977c}
+.record-list{display:flex;flex-direction:column;gap:10px}
+.record{display:flex;align-items:center;gap:12px;padding:13px;border:1px solid var(--line);border-radius:14px}
+.record-date{font-size:12px;font-weight:700;width:55px}
+.record-main{flex:1;font-size:12px;color:#718074}
+.record small{display:block;color:#a0aaa1;margin-top:4px}
+.empty-state{text-align:center;padding:35px 10px;color:#98a398;font-size:13px}
+.settings-row{display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid var(--line);font-size:13px}
+.settings-row:last-child{border:0}
+.switch{width:42px;height:24px;border-radius:20px;background:#dce3da;position:relative;border:0}
+.switch:after{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;background:white;border-radius:50%;transition:.2s}
+.switch.on{background:#6e9876}.switch.on:after{left:21px}
+.footer-note{font-size:10px;line-height:1.7;color:#9aa49b;margin-top:24px}
+.toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);opacity:0;background:#26372d;color:white;padding:12px 18px;border-radius:99px;font-size:12px;transition:.25s;pointer-events:none;z-index:20}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.modal-backdrop{position:fixed;inset:0;background:#1b2a2080;display:none;align-items:center;justify-content:center;padding:20px;z-index:10}
+.modal-backdrop.show{display:flex}
+.modal{background:white;border-radius:22px;padding:25px;max-width:460px;width:100%;box-shadow:var(--shadow)}
+.modal h3{margin:0 0 8px}.modal p{font-size:13px;color:var(--muted);line-height:1.7}
+.modal-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:20px}
+@media(max-width:760px){
+ .app{padding:18px 16px 38px}.layout{grid-template-columns:1fr;gap:18px}
+ .sidebar{flex-direction:row;overflow:auto;gap:5px;padding-bottom:4px}
+ .nav-label,.side-note{display:none}.nav{white-space:nowrap;padding:10px 12px;font-size:12px}
+ .nav .ico{width:auto}.hero{grid-template-columns:1fr;padding:23px}.hero-art{display:none}
+ h1{font-size:27px}.stats{gap:8px}.stat{padding:14px}.stat-value{font-size:21px}
+ .two-col,.review-grid{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}
+ .topbar{margin-bottom:22px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><div class="logo">药</div><div><div class="brand-name">药药</div><div class="brand-sub">拍一张，记住今天。</div></div></div>
+    <div class="top-right"><span>个人记录空间</span><div class="avatar">Y</div></div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="nav-label">WORKSPACE</div>
+      <button class="nav active" data-page="home"><span class="ico">⌂</span>首页</button>
+      <button class="nav" data-page="medication"><span class="ico">▤</span>药品档案</button>
+      <button class="nav" data-page="camera"><span class="ico">◎</span>拍照打卡</button>
+      <button class="nav" data-page="calendar"><span class="ico">▦</span>记录日历</button>
+      <button class="nav" data-page="settings"><span class="ico">⚙</span>设置</button>
+      <div class="side-note">让每一次记录都简单一点。<br>照片辅助记录，服药状态由你确认。</div>
+    </aside>
+
+    <main class="content">
+      <section class="page active" id="page-home">
+        <div class="eyebrow">YOUR DAILY COMPANION</div>
+        <h1>今天，也记得照顾自己。</h1>
+        <p class="lead">用一张照片记录药板变化，让每天的服药记录更直观。</p>
+        <div class="hero">
+          <div><h2>拍一张，完成今天的记录</h2><p>对准药板拍摄，查看药位变化，再由你确认实际服药情况。每一步都清楚、可追溯。</p><button class="btn primary" onclick="go('camera')">开始拍照记录　→</button></div>
+          <div class="hero-art"><div class="blister" id="heroBlister"></div></div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="stat-label">本周期记录</div><div class="stat-value" id="statCount">0 天</div><div class="stat-foot">已确认的记录</div></div>
+          <div class="stat"><div class="stat-label">连续记录</div><div class="stat-value" id="statStreak">0 天</div><div class="stat-foot">仅统计记录连续性</div></div>
+          <div class="stat"><div class="stat-label">下次提醒</div><div class="stat-value" id="statTime">21:00</div><div class="stat-foot">本机演示设置</div></div>
+        </div>
+        <div class="section-head"><h3>今日记录</h3><span class="status" id="todayBadge">等待记录</span></div>
+        <div class="card">
+          <div class="today-row"><div class="date-chip"><div><span id="todayMonth">--月</span><strong id="todayDay">--</strong></div></div><div class="today-info"><strong id="todayTitle">还没有今天的照片</strong><p id="todayDesc">拍摄药板，开始今天的记录。</p></div><button class="btn secondary small" onclick="go('camera')">去拍照</button></div>
+          <div class="progress-wrap"><div class="progress-top"><span>本周期记录进度</span><span id="progressText">0%</span></div><div class="progress"><b id="progressBar" style="width:0%"></b></div></div>
+        </div>
+        <div class="section-head"><h3>快捷入口</h3></div>
+        <div class="two-col">
+          <div class="card quick-card"><div class="quick-icon">▤</div><div><strong>我的药品档案</strong><p>管理药品信息与服用方案</p></div><button class="btn ghost small" onclick="go('medication')">查看</button></div>
+          <div class="card quick-card"><div class="quick-icon">▦</div><div><strong>历史记录</strong><p>回看每日确认情况</p></div><button class="btn ghost small" onclick="go('calendar')">查看</button></div>
+        </div>
+        <div class="footer-note">药药是个人记录与提醒工具。照片中的药片取出状态不等于实际吞服；本工具不判断避孕效果，不替代药品说明书或专业医疗建议。</div>
+      </section>
+
+      <section class="page" id="page-medication">
+        <div class="page-head"><div class="eyebrow">MEDICATION PROFILE</div><h1>药品档案</h1><p class="lead">记录你正在使用的药品和经核实的服用安排。</p></div>
+        <div class="card">
+          <div class="form-grid">
+            <div class="field"><label>药品名称</label><input id="medName" placeholder="填写药品通用名或商品名"></div>
+            <div class="field"><label>每板药位数量</label><input id="medSlots" type="number" min="1" max="60" value="21"></div>
+            <div class="field"><label>每日提醒时间</label><input id="medTime" type="time" value="21:00"></div>
+            <div class="field"><label>包装类型</label><select id="medType"><option>泡罩药板</option><option>其他包装</option></select></div>
+          </div>
+          <div class="field"><label>服用方案备注（以药品说明书为准）</label><textarea id="medNote" rows="3" placeholder="可填写活性药片、安慰剂安排及周期说明。不确定时请先咨询药师。"></textarea></div>
+          <div class="notice">不同短效避孕药的成分、药片排列和服用方案可能不同。请勿仅凭药板外观推断药品成分或服法。</div>
+          <button class="btn primary" onclick="saveMedication()">保存药品档案</button>
+        </div>
+        <div class="section-head"><h3>当前档案</h3><span class="status" id="medBadge">未建立</span></div>
+        <div class="card" id="medSummary"><div class="empty-state">尚未建立药品档案。填写上方信息后保存。</div></div>
+      </section>
+
+      <section class="page" id="page-camera">
+        <div class="page-head"><div class="eyebrow">PHOTO CHECK-IN</div><h1>拍照记录</h1><p class="lead">把药板放平、拍完整，让每次记录都有据可查。</p></div>
+        <div class="card">
+          <div class="camera-box" id="cameraBox">
+            <div class="camera-empty"><div class="cam-icon">◎</div><strong>准备拍摄药板</strong><p>请将完整药板放在画面内<br>保持光线均匀，避免反光与遮挡</p></div>
+          </div>
+          <input id="photoInput" type="file" accept="image/*" capture="environment" hidden>
+          <div class="camera-actions"><button class="btn primary" onclick="document.getElementById('photoInput').click()">打开相机拍摄</button><button class="btn secondary" id="analyzeBtn" onclick="runDemoRecognition()" disabled>分析照片变化</button><button class="btn ghost" onclick="resetPhoto()">重新拍摄</button></div>
+          <div class="notice">当前 HTML 版的“识别”是交互演示，不是真实视觉算法。它不会自动判断药片是否已吞服，也不会把模拟结果作为真实服药事实。</div>
+        </div>
+        <div class="card" id="recognitionPanel" style="display:none;margin-top:16px">
+          <div class="section-head" style="margin-top:0"><h3>照片检查结果</h3><span class="status warn">演示模式</span></div>
+          <p class="lead" id="recognitionText">照片已载入。真实药位识别算法尚未接入。</p>
+          <div class="section-head"><h3>请确认今天的实际情况</h3></div>
+          <p class="help">药板发生变化不代表药片一定已经服用。请选择与你实际情况相符的状态。</p>
+          <div class="choice" id="statusChoices">
+            <button data-status="taken" onclick="chooseStatus(this)">已按方案服用</button>
+            <button data-status="not_taken" onclick="chooseStatus(this)">尚未服用</button>
+            <button data-status="uncertain" onclick="chooseStatus(this)">我不确定</button>
+          </div>
+          <button class="btn primary" onclick="saveTodayRecord()">确认并保存记录</button>
+        </div>
+      </section>
+
+      <section class="page" id="page-calendar">
+        <div class="page-head"><div class="eyebrow">RECORD HISTORY</div><h1>记录日历</h1><p class="lead">查看每天的照片记录和人工确认状态。</p></div>
+        <div class="card">
+          <div class="calendar-head"><button class="btn ghost small" onclick="changeMonth(-1)">←</button><strong id="calendarTitle"></strong><button class="btn ghost small" onclick="changeMonth(1)">→</button></div>
+          <div class="calendar-grid" id="calendarGrid"></div>
+          <div class="help" style="margin-top:15px">绿色：已确认服用　·　黄色：未服用或不确定　·　灰色：无记录</div>
+        </div>
+        <div class="section-head"><h3>最近记录</h3></div>
+        <div class="card"><div class="record-list" id="recordList"><div class="empty-state">还没有记录。</div></div></div>
+      </section>
+
+      <section class="page" id="page-settings">
+        <div class="page-head"><div class="eyebrow">PREFERENCES</div><h1>设置</h1><p class="lead">管理提醒偏好和本地演示数据。</p></div>
+        <div class="card">
+          <div class="settings-row"><div><strong>每日提醒时间</strong><div class="help">HTML 原型仅保存设置，不会在关闭页面后发送通知</div></div><input id="settingTime" type="time" value="21:00" style="border:1px solid var(--line);border-radius:10px;padding:8px"></div>
+          <div class="settings-row"><div><strong>提醒功能</strong><div class="help">正式版需接入微信订阅消息或合规通知服务</div></div><button class="switch on" id="reminderSwitch" onclick="toggleSwitch(this)"></button></div>
+          <div class="settings-row"><div><strong>本地数据</strong><div class="help">当前原型使用浏览器 localStorage</div></div><button class="btn ghost small" onclick="exportData()">导出 JSON</button></div>
+          <div class="settings-row"><div><strong>清除本地数据</strong><div class="help">删除本浏览器保存的档案和记录</div></div><button class="btn ghost small" onclick="clearData()">清除</button></div>
+        </div>
+        <div class="notice">隐私提示：不要在公共或他人设备上保存真实生殖健康记录。正式产品上线前，需要完成敏感个人信息告知、单独同意、访问控制、数据删除与安全评估。</div>
+      </section>
+    </main>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="modal-backdrop" id="modal"><div class="modal"><h3 id="modalTitle">确认操作</h3><p id="modalText"></p><div class="modal-actions"><button class="btn ghost small" onclick="closeModal()">取消</button><button class="btn primary small" id="modalConfirm">确认</button></div></div></div>
+<script>
+const KEY='yaoyao_html_v1';
+let state={medication:null,records:[],reminderOn:true};
+let photoData=null,chosenStatus=null,calendarDate=new Date();
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s)state={...state,...s}}catch(e){}}
+function persist(){localStorage.setItem(KEY,JSON.stringify(state));renderAll()}
+function toast(t){const el=document.getElementById('toast');el.textContent=t;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2200)}
+function go(name){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('page-'+name).classList.add('active');document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('active',n.dataset.page===name));if(name==='calendar')renderCalendar();if(name==='medication')renderMedication();window.scrollTo({top:0,behavior:'smooth'})}
+document.querySelectorAll('.nav').forEach(n=>n.addEventListener('click',()=>go(n.dataset.page)));
+function saveMedication(){
+ const name=document.getElementById('medName').value.trim(),slots=Number(document.getElementById('medSlots').value);
+ if(!name)return toast('请填写药品名称');if(!Number.isInteger(slots)||slots<1||slots>60)return toast('请检查药位数量');
+ state.medication={name,slots,time:document.getElementById('medTime').value,type:document.getElementById('medType').value,note:document.getElementById('medNote').value,createdAt:new Date().toISOString()};
+ persist();toast('药品档案已保存');
+}
+function renderMedication(){
+ const m=state.medication;document.getElementById('medBadge').textContent=m?'已建立':'未建立';
+ if(!m){document.getElementById('medSummary').innerHTML='<div class="empty-state">尚未建立药品档案。填写上方信息后保存。</div>';return}
+ document.getElementById('medName').value=m.name;document.getElementById('medSlots').value=m.slots;document.getElementById('medTime').value=m.time;document.getElementById('medType').value=m.type;document.getElementById('medNote').value=m.note||'';
+ document.getElementById('medSummary').innerHTML=`<div class="today-row"><div class="quick-icon">▤</div><div class="today-info"><strong>${esc(m.name)}</strong><p>${m.slots} 个药位 · ${esc(m.type)} · 提醒 ${esc(m.time)}</p></div><span class="status ok">档案有效</span></div>${m.note?`<p class="help">${esc(m.note)}</p>`:''}`;
+}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+document.getElementById('photoInput').addEventListener('change',e=>{
+ const f=e.target.files[0];if(!f)return;if(!f.type.startsWith('image/'))return toast('请选择图片文件');
+ const reader=new FileReader();reader.onload=()=>{photoData=reader.result;document.getElementById('cameraBox').innerHTML=`<img src="${photoData}" alt="药板照片预览">`;document.getElementById('analyzeBtn').disabled=false;document.getElementById('recognitionPanel').style.display='none';chosenStatus=null};reader.readAsDataURL(f);
+});
+function resetPhoto(){photoData=null;chosenStatus=null;document.getElementById('photoInput').value='';document.getElementById('cameraBox').innerHTML='<div class="camera-empty"><div class="cam-icon">◎</div><strong>准备拍摄药板</strong><p>请将完整药板放在画面内<br>保持光线均匀，避免反光与遮挡</p></div>';document.getElementById('analyzeBtn').disabled=true;document.getElementById('recognitionPanel').style.display='none'}
+function runDemoRecognition(){if(!photoData)return toast('请先拍摄照片');document.getElementById('recognitionPanel').style.display='block';document.getElementById('recognitionText').textContent='照片已载入，图像识别接口尚未连接。本演示不会输出药位变化结论。请根据实际情况选择记录状态。';document.getElementById('recognitionPanel').scrollIntoView({behavior:'smooth',block:'center'})}
+function chooseStatus(btn){chosenStatus=btn.dataset.status;document.querySelectorAll('#statusChoices button').forEach(b=>b.classList.toggle('selected',b===btn))}
+function saveTodayRecord(){if(!photoData)return toast('请先拍摄照片');if(!chosenStatus)return toast('请先选择实际服药状态');const today=localDate(new Date());state.records=state.records.filter(r=>r.date!==today);state.records.push({date:today,status:chosenStatus,photo:photoData,createdAt:new Date().toISOString()});persist();toast('今天的记录已保存');go('home');}
+function localDate(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function renderAll(){renderMedication();renderHome();renderCalendar();document.getElementById('statTime').textContent=state.medication?.time||'21:00';document.getElementById('settingTime').value=state.medication?.time||'21:00'}
+function renderHome(){
+ const now=new Date(),today=localDate(now),r=state.records.find(x=>x.date===today),m=state.medication;
+ document.getElementById('todayMonth').textContent=(now.getMonth()+1)+'月';document.getElementById('todayDay').textContent=now.getDate();
+ document.getElementById('todayTitle').textContent=r?'今天已有一条记录':'还没有今天的照片';
+ document.getElementById('todayDesc').textContent=r?statusText(r.status)+' · '+new Date(r.createdAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}):'拍摄药板，开始今天的记录。';
+ const badge=document.getElementById('todayBadge');badge.textContent=r?statusText(r.status):'等待记录';badge.className='status '+(r?.status==='taken'?'ok':r?'warn':'');
+ const confirmed=state.records.filter(x=>x.status==='taken').length;document.getElementById('statCount').textContent=confirmed+' 天';
+ document.getElementById('statStreak').textContent=streak()+' 天';
+ const pct=m?Math.min(100,Math.round(confirmed/m.slots*100)):0;document.getElementById('progressText').textContent=pct+'%';document.getElementById('progressBar').style.width=pct+'%';
+ const hb=document.getElementById('heroBlister');hb.innerHTML='';for(let i=0;i<21;i++){const x=document.createElement('i');if(i<Math.min(7,confirmed))x.className='empty';hb.appendChild(x)}
+}
+function statusText(s){return s==='taken'?'已确认服用':s==='not_taken'?'尚未服用':'状态不确定'}
+function streak(){let d=new Date(),n=0;for(let i=0;i<366;i++){const r=state.records.find(x=>x.date===localDate(d));if(!r)break;n++;d.setDate(d.getDate()-1)}return n}
+function renderCalendar(){
+ const y=calendarDate.getFullYear(),m=calendarDate.getMonth(),first=new Date(y,m,1),days=new Date(y,m+1,0).getDate(),offset=(first.getDay()+6)%7;
+ document.getElementById('calendarTitle').textContent=`${y}年 ${m+1}月`;const grid=document.getElementById('calendarGrid');grid.innerHTML='';
+ ['一','二','三','四','五','六','日'].forEach(x=>{const d=document.createElement('div');d.className='weekday';d.textContent=x;grid.appendChild(d)});
+ for(let i=0;i<offset;i++){const d=document.createElement('div');grid.appendChild(d)}
+ for(let day=1;day<=days;day++){const date=`${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`,r=state.records.find(x=>x.date===date),el=document.createElement('div');el.className='day'+(r?(r.status==='taken'?' done':' pending'):'')+(date===localDate(new Date())?' today':'');el.textContent=day;el.title=r?statusText(r.status):'无记录';grid.appendChild(el)}
+ const list=document.getElementById('recordList');const rec=[...state.records].sort((a,b)=>b.date.localeCompare(a.date));list.innerHTML=rec.length?rec.map(r=>`<div class="record"><div class="record-date">${r.date.slice(5)}</div><div class="record-main">${statusText(r.status)}<small>${new Date(r.createdAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})} · 照片记录</small></div><span class="status ${r.status==='taken'?'ok':'warn'}">${r.status==='taken'?'已确认':'需留意'}</span></div>`).join(''):'<div class="empty-state">还没有记录。</div>';
+}
+function changeMonth(n){calendarDate.setMonth(calendarDate.getMonth()+n);renderCalendar()}
+function toggleSwitch(el){el.classList.toggle('on');state.reminderOn=el.classList.contains('on');persist();toast('提醒偏好已更新（原型不发送通知）')}
+function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='yaoyao-data-export.json';a.click();URL.revokeObjectURL(a.href);toast('已导出数据')}
+function openModal(title,text,cb){document.getElementById('modalTitle').textContent=title;document.getElementById('modalText').textContent=text;document.getElementById('modal').classList.add('show');document.getElementById('modalConfirm').onclick=()=>{closeModal();cb()}}
+function closeModal(){document.getElementById('modal').classList.remove('show')}
+function clearData(){openModal('清除本地数据','这会删除本浏览器中的药品档案和所有记录，且无法撤销。',()=>{localStorage.removeItem(KEY);state={medication:null,records:[],reminderOn:true};renderAll();renderMedication();toast('本地数据已清除')})}
+load();renderAll();renderMedication();document.getElementById('reminderSwitch').classList.toggle('on',state.reminderOn);
+</script>
+</body>
+</html>

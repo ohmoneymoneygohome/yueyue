@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#fbfaf6">
+<link rel="icon" href="data:,">
+<title>药药 · 今天的药，记清楚</title>
+<link rel="stylesheet" href="./assets/style.css">
+</head>
+<body>
+<div class="app">
+  <div class="banner" id="previewBanner" hidden>预览模式 · 未在小红书容器内运行，数据不会保存</div>
+
+  <header class="topbar">
+    <button class="brand" data-nav="home">
+      <span class="logo">药</span>
+      <span class="brand-text">
+        <span class="brand-name">药药</span>
+        <span class="brand-sub">今天的药，记清楚</span>
+      </span>
+    </button>
+    <button class="mascot state-pending" data-nav="profile" id="mascotBtn" aria-label="我的">
+      <svg class="mascot-svg scene-taken" viewBox="8 0 48 48" aria-hidden="true">
+        <path d="M32 6l1.4 3.4L37 11l-3.6 1.6L32 16l-1.4-3.4L27 11l3.6-1.6z" fill="#E3C98F"/>
+        <path d="M29 11 15 35M35 11 49 35" stroke="#CBB48A" stroke-width="1" stroke-linecap="round"/>
+        <path d="M12 35c3 11 37 11 40 0-6 6-34 6-40 0z" fill="#E7C983"/>
+        <ellipse cx="32" cy="31" rx="7.5" ry="8" fill="#FFF9F0"/>
+        <ellipse cx="26.5" cy="37" rx="2.6" ry="2" fill="#F3E5D3"/>
+        <ellipse cx="37.5" cy="37" rx="2.6" ry="2" fill="#F3E5D3"/>
+        <ellipse cx="27.5" cy="17.5" rx="2.9" ry="7.4" transform="rotate(-10 27.5 17.5)" fill="#FFF9F0"/>
+        <ellipse cx="36.5" cy="17.5" rx="2.9" ry="7.4" transform="rotate(10 36.5 17.5)" fill="#FFF9F0"/>
+        <ellipse cx="27.5" cy="18.5" rx="1.3" ry="4.6" transform="rotate(-10 27.5 18.5)" fill="#EFCDC0"/>
+        <ellipse cx="36.5" cy="18.5" rx="1.3" ry="4.6" transform="rotate(10 36.5 18.5)" fill="#EFCDC0"/>
+        <circle cx="32" cy="25" r="7" fill="#FFF9F0"/>
+        <path d="M28.4 24.6c.7.9 1.7.9 2.4 0M33.2 24.6c.7.9 1.7.9 2.4 0" stroke="#46604F" stroke-width="1.1" stroke-linecap="round" fill="none"/>
+        <circle cx="27" cy="27.6" r="1.5" fill="#EAB9A6" opacity=".55"/>
+        <circle cx="37" cy="27.6" r="1.5" fill="#EAB9A6" opacity=".55"/>
+        <circle cx="32" cy="27" r=".8" fill="#D9A08E"/>
+        <path d="M26 28 17 35M38 28 47 35" stroke="#FFF9F0" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+      <svg class="mascot-svg scene-pending" viewBox="12 12 44 44" aria-hidden="true">
+        <circle cx="42" cy="29" r="13" fill="#E7C983"/>
+        <circle cx="42" cy="29" r="13" fill="none" stroke="#D2AF6B" stroke-width=".8" opacity=".5"/>
+        <circle cx="38" cy="24" r="2" fill="#D2AF6B" opacity=".5"/>
+        <circle cx="46" cy="33" r="1.4" fill="#D2AF6B" opacity=".5"/>
+        <circle cx="33" cy="23" r="5" fill="#F8EFD9"/>
+        <ellipse cx="24" cy="43" rx="8.5" ry="9" fill="#FFF9F0"/>
+        <ellipse cx="19" cy="28" rx="3" ry="8" transform="rotate(-14 19 28)" fill="#FFF9F0"/>
+        <ellipse cx="28" cy="26" rx="3" ry="8" transform="rotate(8 28 26)" fill="#FFF9F0"/>
+        <ellipse cx="19" cy="29" rx="1.3" ry="5" transform="rotate(-14 19 29)" fill="#EFCDC0"/>
+        <ellipse cx="28" cy="27" rx="1.3" ry="5" transform="rotate(8 28 27)" fill="#EFCDC0"/>
+        <circle cx="24" cy="36" r="7.5" fill="#FFF9F0"/>
+        <circle cx="21.5" cy="35" r="1" fill="#46604F"/>
+        <circle cx="27" cy="34.5" r="1" fill="#46604F"/>
+        <circle cx="24.5" cy="38" r=".8" fill="#D9A08E"/>
+        <circle cx="20" cy="39" r="1.5" fill="#EAB9A6" opacity=".55"/>
+        <circle cx="28" cy="38.6" r="1.5" fill="#EAB9A6" opacity=".55"/>
+        <path d="M29 40 34 36M30 44 35 41" stroke="#FFF9F0" stroke-width="2.6" stroke-linecap="round"/>
+        <ellipse cx="20" cy="51" rx="3" ry="2" fill="#F3E5D3"/>
+        <ellipse cx="28" cy="51" rx="3" ry="2" fill="#F3E5D3"/>
+        <circle cx="38" cy="43" r="1" fill="#D2AF6B"/>
+        <circle cx="41" cy="47" r=".8" fill="#D2AF6B"/>
+      </svg>
+      <svg class="mascot-svg scene-missed" viewBox="8 16 48 48" aria-hidden="true">
+        <path d="M10 44c4 10 40 10 44 0-6 5-38 5-44 0z" fill="#E5C37E"/>
+        <ellipse cx="34" cy="38" rx="14" ry="7.5" fill="#FFF9F0"/>
+        <circle cx="46" cy="35" r="7" fill="#FFF9F0"/>
+        <ellipse cx="41.5" cy="27.5" rx="2.8" ry="7" transform="rotate(52 41.5 27.5)" fill="#FFF9F0"/>
+        <ellipse cx="49.5" cy="28.5" rx="2.8" ry="7" transform="rotate(-38 49.5 28.5)" fill="#FFF9F0"/>
+        <ellipse cx="42" cy="28" rx="1.2" ry="4.3" transform="rotate(52 42 28)" fill="#EFCDC0"/>
+        <ellipse cx="49" cy="29" rx="1.2" ry="4.3" transform="rotate(-38 49 29)" fill="#EFCDC0"/>
+        <path d="M43 35.5h2M47 35.2h2" stroke="#46604F" stroke-width="1" stroke-linecap="round"/>
+        <path d="M45 38.5h2.4" stroke="#D9A08E" stroke-width=".9" stroke-linecap="round"/>
+        <circle cx="42.5" cy="37.5" r="1.4" fill="#EAB9A6" opacity=".5"/>
+        <circle cx="49.5" cy="37" r="1.4" fill="#EAB9A6" opacity=".5"/>
+        <circle cx="21" cy="38" r="2.6" fill="#F3E5D3"/>
+        <path d="M54 25c1.5 2 2.2 3 2.2 4a2.2 2.2 0 1 1-4.4 0c0-1 .7-2 2.2-4z" fill="#D9A08E" opacity=".65"/>
+      </svg>
+      <svg class="mascot-svg scene-break" viewBox="6 12 52 52" aria-hidden="true">
+        <path d="M8 50c4-2 8-2 12 0s8 2 12 0 8-2 12 0 8 2 12 0" stroke="#CBDDD6" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+        <path d="M12 55c4-2 8-2 12 0s8 2 12 0 8-2 12 0" stroke="#CBDDD6" stroke-width="1.2" fill="none" stroke-linecap="round" opacity=".7"/>
+        <path d="M12 43c4 10 36 10 40 0-6 5-34 5-40 0z" fill="#E7C983"/>
+        <ellipse cx="30" cy="36" rx="7" ry="7.5" fill="#FFF9F0"/>
+        <ellipse cx="26" cy="24" rx="2.8" ry="7" transform="rotate(-8 26 24)" fill="#FFF9F0"/>
+        <ellipse cx="34" cy="23.5" rx="2.8" ry="7" transform="rotate(8 34 23.5)" fill="#FFF9F0"/>
+        <ellipse cx="26" cy="25" rx="1.2" ry="4.4" transform="rotate(-8 26 25)" fill="#EFCDC0"/>
+        <ellipse cx="34" cy="24.5" rx="1.2" ry="4.4" transform="rotate(8 34 24.5)" fill="#EFCDC0"/>
+        <circle cx="30" cy="33" r="7" fill="#FFF9F0"/>
+        <path d="M26.5 32.5c.6.8 1.5.8 2.1 0M31.4 32.5c.6.8 1.5.8 2.1 0" stroke="#46604F" stroke-width="1" stroke-linecap="round" fill="none"/>
+        <circle cx="25.5" cy="35.5" r="1.3" fill="#EAB9A6" opacity=".55"/>
+        <circle cx="34.5" cy="35.5" r="1.3" fill="#EAB9A6" opacity=".55"/>
+        <circle cx="30" cy="35" r=".7" fill="#D9A08E"/>
+        <path d="M35 38 46 50" stroke="#CBB48A" stroke-width="1.6" stroke-linecap="round"/>
+        <ellipse cx="47.5" cy="51.5" rx="3" ry="1.8" transform="rotate(42 47.5 51.5)" fill="#E3C98F"/>
+        <path d="M33 37 38 40" stroke="#FFF9F0" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+      <svg class="mascot-svg scene-paused" viewBox="8 10 48 48" aria-hidden="true">
+        <ellipse cx="27" cy="41" rx="7.5" ry="8" fill="#FFF9F0"/>
+        <ellipse cx="23" cy="20" rx="2.9" ry="7.2" transform="rotate(-10 23 20)" fill="#FFF9F0"/>
+        <ellipse cx="31" cy="19.5" rx="2.9" ry="7.2" transform="rotate(8 31 19.5)" fill="#FFF9F0"/>
+        <ellipse cx="23" cy="21" rx="1.2" ry="4.5" transform="rotate(-10 23 21)" fill="#EFCDC0"/>
+        <ellipse cx="31" cy="20.5" rx="1.2" ry="4.5" transform="rotate(8 31 20.5)" fill="#EFCDC0"/>
+        <circle cx="27" cy="30" r="7" fill="#FFF9F0"/>
+        <circle cx="24.5" cy="30" r="1" fill="#46604F"/>
+        <circle cx="29.5" cy="30" r="1" fill="#46604F"/>
+        <circle cx="27" cy="32.5" r=".8" fill="#D9A08E"/>
+        <circle cx="23" cy="32.5" r="1.4" fill="#EAB9A6" opacity=".55"/>
+        <circle cx="31" cy="32.5" r="1.4" fill="#EAB9A6" opacity=".55"/>
+        <ellipse cx="24" cy="48" rx="3" ry="1.8" fill="#F3E5D3"/>
+        <ellipse cx="30" cy="48" rx="3" ry="1.8" fill="#F3E5D3"/>
+        <path d="M32 35 37 38" stroke="#FFF9F0" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M39 42 37 34" stroke="#CBB48A" stroke-width="1.6" stroke-linecap="round"/>
+        <rect x="37" y="24" width="16" height="13" rx="3" fill="#DCE9EF" stroke="#B9CFDC" stroke-width="1"/>
+        <text x="45" y="33.5" text-anchor="middle" font-size="8" font-weight="700" fill="#4A6B80" font-family="sans-serif">停</text>
+      </svg>
+      <svg class="mascot-svg scene-uncertain" viewBox="14 10 44 44" aria-hidden="true">
+        <circle cx="40" cy="34" r="13" fill="#E7C983"/>
+        <circle cx="36" cy="29" r="2" fill="#D2AF6B" opacity=".5"/>
+        <ellipse cx="24" cy="30" rx="2.9" ry="7" transform="rotate(-16 24 30)" fill="#FFF9F0"/>
+        <ellipse cx="32" cy="29" rx="2.9" ry="7" transform="rotate(10 32 29)" fill="#FFF9F0"/>
+        <ellipse cx="24" cy="31" rx="1.2" ry="4.4" transform="rotate(-16 24 31)" fill="#EFCDC0"/>
+        <ellipse cx="32" cy="30" rx="1.2" ry="4.4" transform="rotate(10 32 30)" fill="#EFCDC0"/>
+        <circle cx="27" cy="39" r="8" fill="#FFF9F0"/>
+        <circle cx="24" cy="38" r="1" fill="#46604F"/>
+        <circle cx="30" cy="38" r="1" fill="#46604F"/>
+        <circle cx="27" cy="41" r=".8" fill="#D9A08E"/>
+        <circle cx="22" cy="41.5" r="1.4" fill="#EAB9A6" opacity=".55"/>
+        <circle cx="32" cy="41.5" r="1.4" fill="#EAB9A6" opacity=".55"/>
+        <circle cx="48" cy="18" r="6" fill="#F5DCE8"/>
+        <text x="48" y="21.5" text-anchor="middle" font-size="8" font-weight="700" fill="#96506F" font-family="sans-serif">?</text>
+      </svg>
+      <svg class="mascot-svg scene-empty" viewBox="8 14 48 48" aria-hidden="true">
+        <path d="M12 40c4 10 36 10 40 0-6 5-34 5-40 0z" fill="#E5C37E"/>
+        <ellipse cx="30" cy="35" rx="10" ry="6.5" fill="#FFF9F0"/>
+        <circle cx="22" cy="33" r="6.2" fill="#FFF9F0"/>
+        <ellipse cx="16" cy="38" rx="2.6" ry="6.5" transform="rotate(72 16 38)" fill="#FFF9F0"/>
+        <ellipse cx="19" cy="45" rx="2.6" ry="6" transform="rotate(88 19 45)" fill="#FFF9F0"/>
+        <path d="M20 33h2M24 33h2" stroke="#46604F" stroke-width=".9" stroke-linecap="round"/>
+        <circle cx="21" cy="35.5" r="1.2" fill="#EAB9A6" opacity=".5"/>
+        <circle cx="39" cy="36" r="2.4" fill="#F3E5D3"/>
+        <text x="43" y="25" font-size="7" font-weight="700" fill="#AEB6AE" font-family="sans-serif">z</text>
+        <text x="48" y="20" font-size="5.5" font-weight="700" fill="#AEB6AE" font-family="sans-serif">z</text>
+      </svg>
+    </button>
+  </header>
+
+  <main class="main">
+    <!-- ==================== 首页 ==================== -->
+    <section class="page is-active" data-page="home">
+      <div class="date-row">
+        <div class="date-main" id="homeDate">--</div>
+        <div class="date-sub" id="homeWeek">--</div>
+      </div>
+
+      <div class="dev-panel" id="devPanel" hidden>
+        <div class="dev-head"><span>开发者模式</span><span id="devHint">虚拟今天</span></div>
+        <div class="dev-date-row">
+          <button class="dev-arrow" data-action="dev-prev" aria-label="前一天">‹</button>
+          <div class="dev-date" id="devDateText">--</div>
+          <button class="dev-arrow" data-action="dev-next" aria-label="后一天">›</button>
+        </div>
+        <div class="dev-btns">
+          <button class="dev-btn is-taken" data-action="dev-add" data-status="taken">已服</button>
+          <button class="dev-btn is-not" data-action="dev-add" data-status="not_taken">未服</button>
+          <button class="dev-btn is-uncertain" data-action="dev-add" data-status="uncertain">不确定</button>
+        </div>
+        <div class="dev-foot">
+          <button class="link-btn" data-action="dev-today">回到今天</button>
+          <button class="link-btn" data-action="dev-open">打开当天</button>
+          <button class="link-btn" data-action="dev-clear">清空当天</button>
+        </div>
+      </div>
+
+      <div class="notice amber" id="loadErrorNotice" hidden>
+        <strong>本机记录读取失败</strong>
+        可能是存储暂时不可用，可以稍后重试。
+        <button class="link-btn" data-action="retry-load">重试读取</button>
+      </div>
+
+      <div class="today-card today-hero is-empty" id="todayCard">
+        <div class="hero-top">
+          <span class="eyebrow">TODAY</span>
+          <span class="status" id="todayStatus">尚未记录</span>
+        </div>
+        <div class="shutter-wrap">
+          <span class="shutter-ring r1"></span>
+          <span class="shutter-ring r2"></span>
+          <button class="shutter" data-action="start-checkin" id="captureBtn" aria-label="拍照记录">
+            <svg class="shutter-ico ico-camera" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9.2 4.5 8 6.6H5.4A1.9 1.9 0 0 0 3.5 8.5v8.6a1.9 1.9 0 0 0 1.9 1.9h13.2a1.9 1.9 0 0 0 1.9-1.9V8.5a1.9 1.9 0 0 0-1.9-1.9H16L14.8 4.5H9.2Z"></path>
+              <circle cx="12" cy="12.6" r="3.2"></circle>
+            </svg>
+            <svg class="shutter-ico ico-pause" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="8" y="5.5" width="3.2" height="13" rx="1.6"></rect>
+              <rect x="12.8" y="5.5" width="3.2" height="13" rx="1.6"></rect>
+            </svg>
+            <span class="shutter-label" id="captureLabel">点一下拍照</span>
+          </button>
+        </div>
+        <h1 id="todayTitle">今天还没有记录</h1>
+        <p class="lead" id="todayLead">拍一张药板照片，再由你确认今天的服药情况。</p>
+        <div class="hero-foot" id="heroFoot" hidden>
+          <button class="link-btn hero-secondary" data-action="view-today" id="todaySecondary" hidden>查看今天的记录</button>
+          <div class="record-switch" id="recordSwitch" hidden>
+            <button class="rs-opt" data-action="open-pause" id="pauseOpt">停止记录</button>
+            <button class="rs-opt is-on" data-action="open-resume" id="resumeOpt">继续记录</button>
+          </div>
+        </div>
+      </div>
+
+      <section class="card med-card">
+        <div class="card-head">
+          <div>
+            <span class="eyebrow">MEDICATION</span>
+            <h2 id="medNameText">尚未建立药品档案</h2>
+            <p class="muted" id="medMetaText">建立档案后，才能开始每日记录</p>
+          </div>
+          <button class="btn tiny ghost" data-action="open-med" id="medEditBtn">管理</button>
+        </div>
+        <div class="pack-badge" id="packBadgeRow">
+          <span id="packBadge">第 1 板 · 21 片</span>
+          <span id="packHint">点药片查看当天</span>
+        </div>
+        <div class="blister-pack" id="blisterGrid"></div>
+        <div class="blister-legend" id="blisterLegend">
+          <span><i class="dot pending"></i>待服</span>
+          <span><i class="dot taken"></i>已服</span>
+          <span><i class="dot missed"></i>漏服</span>
+          <span><i class="dot pink"></i>不确定</span>
+          <span><i class="dot breakday"></i>无需服药</span>
+        </div>
+        <div class="break-wrap" id="breakWrap" hidden>
+          <div class="break-head"><span>停药期 · 7 天</span><span>无需服药</span></div>
+          <div class="break-row" id="breakRow"></div>
+        </div>
+        <div class="progress-top"><span>本板已服</span><span id="blisterProgress">0 / 21</span></div>
+        <div class="progress"><b id="blisterBar" style="width:0%"></b></div>
+        <div class="med-foot">
+          <span class="muted" id="medNextTime">--</span>
+          <button class="link-btn" data-action="new-blister">换新板</button>
+        </div>
+      </section>
+
+      <section class="stats">
+        <div class="stat">
+          <div class="stat-label">记录天数</div>
+          <div class="stat-value" id="statDays">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">已确认服用</div>
+          <div class="stat-value" id="statTaken">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">不确定</div>
+          <div class="stat-value" id="statUncertain">0</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div>
+            <span class="eyebrow">RECENT</span>
+            <h2>最近记录</h2>
+          </div>
+          <button class="link-btn" data-nav="calendar">全部</button>
+        </div>
+        <div class="record-list" id="recentList"></div>
+      </section>
+
+      <p class="foot-note">药药只记录你自己确认的情况，不判断避孕效果，不替代药品说明书或医生建议。</p>
+    </section>
+
+    <!-- ==================== 每日拍照 ==================== -->
+    <section class="page" data-page="checkin">
+      <div class="page-head">
+        <button class="link-btn" data-nav="home">‹ 返回首页</button>
+        <span class="eyebrow">CHECK IN</span>
+        <h1>每日拍照</h1>
+        <p class="lead">拍一张完整药板，点「确认已服用」就能完成今天的记录。</p>
+      </div>
+
+      <section class="card" id="captureStep">
+        <div class="guide">
+          <div class="guide-item">
+            <span class="guide-num">1</span>
+            <div><strong>药板放平</strong><p>浅色桌面，整板完整入镜，不要裁掉边角。</p></div>
+          </div>
+          <div class="guide-item">
+            <span class="guide-num">2</span>
+            <div><strong>光线均匀</strong><p>自然光或室内顶光，避免一半亮一半暗。</p></div>
+          </div>
+          <div class="guide-item">
+            <span class="guide-num">3</span>
+            <div><strong>避开反光</strong><p>铝箔反光会挡住药位，稍微换个角度再拍。</p></div>
+          </div>
+        </div>
+
+        <div class="shot-frame" data-action="open-camera">
+          <span class="corner tl"></span>
+          <span class="corner tr"></span>
+          <span class="corner bl"></span>
+          <span class="corner br"></span>
+          <div class="frame-inner">
+            <span class="frame-ico">◎</span>
+            <strong>把整板放进框内</strong>
+            <p>点击使用后置摄像头拍摄</p>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn primary" data-action="open-camera">拍照</button>
+          <button class="btn ghost" data-action="open-album">从相册选择</button>
+        </div>
+        <button class="link-btn block-link" id="lastPhotoBtn" data-action="view-last-photo" hidden>查看上次拍摄的照片</button>
+        <p class="help">照片只写入这台设备的药药沙箱，不会上传。</p>
+      </section>
+
+      <section class="card" id="previewStep" hidden>
+        <div class="card-head">
+          <div>
+            <span class="eyebrow">PREVIEW</span>
+            <h2>照片预览</h2>
+          </div>
+          <span class="quality-badge" id="qualityBadge">检查中</span>
+        </div>
+        <div class="preview-shot">
+          <img id="photoPreview" alt="药板照片" hidden>
+        </div>
+        <div class="quality-card">
+          <div class="quality-top">
+            <strong id="qualityLabel">照片质量检查</strong>
+            <span id="qualityScore">--</span>
+          </div>
+          <div class="progress"><b id="qualityBar" style="width:0%"></b></div>
+          <ul class="issue-list" id="qualityIssues"></ul>
+          <p class="help" id="qualityHint">正在分析亮度、对比度和清晰度。</p>
+        </div>
+        <div class="btn-row">
+          <button class="btn ghost" data-action="retake">重新拍摄</button>
+          <button class="btn primary" data-action="confirm-taken">确认已服用</button>
+        </div>
+        <div class="secondary-row">
+          <button class="link-btn" data-action="confirm-not-taken">尚未服用</button>
+          <button class="link-btn" data-action="confirm-uncertain">我不确定</button>
+        </div>
+        <button class="link-btn block-link" data-action="confirm-photo">对照药板逐格标记（可选）</button>
+        <p class="help">确认后会记下当前时间，照片只作为当天凭证保存在本机，不会上传。</p>
+      </section>
+
+      <p class="foot-note">药药不提供补服建议、剂量调整或效果判断，具体用法请以药品说明书为准。</p>
+    </section>
+
+    <!-- ==================== 识别结果 ==================== -->
+    <section class="page" data-page="result">
+      <div class="page-head">
+        <button class="link-btn" data-action="back-checkin">‹ 回到照片预览</button>
+        <span class="eyebrow">COMPARE</span>
+        <h1>对照药板</h1>
+        <p class="lead">这一步是可选的。对照照片逐格标记药位外观，方便以后回看。</p>
+      </div>
+
+      <section class="card">
+        <div class="result-shot">
+          <img id="resultPhoto" alt="本次药板照片">
+          <div class="pill-overlay" id="pillOverlay"></div>
+        </div>
+        <div class="legend legend-tight">
+          <span><i class="dot filled"></i>有药</span>
+          <span><i class="dot empty"></i>空位</span>
+          <span><i class="dot unknown"></i>看不清</span>
+          <span><i class="dot changed"></i>有变化</span>
+        </div>
+        <p class="help" id="resultHint">网格按 7 列等分照片，只用于定位；点药位可放大局部并标记。</p>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div>
+            <span class="eyebrow">MARKS</span>
+            <h2>标记概况</h2>
+            <p class="muted" id="resultMarks">已标记 0 / 21</p>
+          </div>
+          <span class="status" id="changedPill">变化 0 格</span>
+        </div>
+        <div class="summary-chips" id="summaryChips"></div>
+        <div class="progress-top"><span>标记完整度</span><span id="completeText">0%</span></div>
+        <div class="progress"><b id="completeBar" style="width:0%"></b></div>
+        <div class="notice amber" id="resultNotice" hidden></div>
+        <div class="notice plain" id="resultCompare" hidden></div>
+      </section>
+
+      <section class="card confirm-card">
+        <span class="eyebrow">CONFIRM</span>
+        <h2>今天实际服药了吗</h2>
+        <p class="help">药位外观变化只说明药板有变化，不能证明药片已经服下。请按实际情况选择。</p>
+        <div class="confirm-list" id="confirmList">
+          <button class="confirm-opt" data-action="choose-status" data-status="taken">
+            <span class="opt-ico">✓</span>
+            <span class="opt-body"><strong>已按方案服用</strong><span>我确认今天的药已经吃过</span></span>
+          </button>
+          <button class="confirm-opt" data-action="choose-status" data-status="not_taken">
+            <span class="opt-ico">—</span>
+            <span class="opt-body"><strong>尚未服用</strong><span>今天还没有吃，先如实记下来</span></span>
+          </button>
+          <button class="confirm-opt" data-action="choose-status" data-status="uncertain">
+            <span class="opt-ico">?</span>
+            <span class="opt-body"><strong>我不确定</strong><span>记不清是否吃过，保留不确定状态</span></span>
+          </button>
+        </div>
+        <button class="btn primary block" data-action="save-record" id="saveRecordBtn">保存这一天的记录</button>
+      </section>
+
+      <p class="foot-note">「空位」只表示药位外观与上次记录不同，不代表你已经服药。药药不判断避孕效果，也不提供补服建议。</p>
+    </section>
+
+    <!-- ==================== 日历 ==================== -->
+    <section class="page" data-page="calendar">
+      <div class="page-head">
+        <span class="eyebrow">HISTORY</span>
+        <h1>记录日历</h1>
+        <p class="lead">点日期查看当天的照片、药位标记和确认结果。</p>
+      </div>
+
+      <section class="card">
+        <div class="cal-head">
+          <button class="cal-nav" data-action="prev-month" aria-label="上个月">‹</button>
+          <strong id="calTitle">--</strong>
+          <button class="cal-nav" data-action="next-month" aria-label="下个月">›</button>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="legend">
+          <span><i class="dot taken"></i>已确认服用</span>
+          <span><i class="dot not-taken"></i>尚未服用</span>
+          <span><i class="dot uncertain"></i>不确定</span>
+          <span><i class="dot none"></i>未记录</span>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>本月概况</h2>
+          <button class="link-btn" data-action="goto-today">回到今天</button>
+        </div>
+        <div class="month-summary" id="monthSummary"></div>
+      </section>
+
+      <p class="foot-note">药板上过去的服药日如果没有记录，会按漏服显示；日历里的格子只反映你确认过的记录。</p>
+    </section>
+
+    <!-- ==================== 历史详情 ==================== -->
+    <section class="page" data-page="day">
+      <div class="page-head">
+        <button class="link-btn" data-action="back-calendar">‹ 回到日历</button>
+        <h1 id="dayTitle">--</h1>
+        <p class="lead" id="daySub">--</p>
+      </div>
+
+      <div class="day-meta" id="dayMeta"></div>
+
+      <section class="card">
+        <div class="day-shot" id="dayShot"></div>
+        <div class="pill-readonly" id="dayPills"></div>
+        <div class="legend legend-tight" id="dayLegend"></div>
+        <button class="btn ghost block" data-action="day-photo" id="dayPhotoBtn" hidden>查看当日照片</button>
+        <div class="btn-row" id="dayActions" hidden>
+          <button class="btn primary" data-action="day-retake">重新拍照记录</button>
+        </div>
+      </section>
+
+      <section class="card" id="dayConfirmCard">
+        <span class="eyebrow">CONFIRM</span>
+        <h2>确认这一天</h2>
+        <p class="help">点一下就保存，服药时间按记录时间自动生成，不需要手动填写。</p>
+        <div class="choice" id="dayChoice">
+          <button data-action="day-status" data-status="taken">已按方案服用</button>
+          <button data-action="day-status" data-status="not_taken">尚未服用</button>
+          <button data-action="day-status" data-status="uncertain">我不确定</button>
+        </div>
+      </section>
+
+      <p class="foot-note">修改历史只影响确认状态，不会改动已经保存的照片与药位标记。</p>
+    </section>
+
+    <!-- ==================== 我的 ==================== -->
+    <section class="page" data-page="profile">
+      <div class="page-head">
+        <span class="eyebrow">PROFILE</span>
+        <h1>我的</h1>
+        <p class="lead">药品档案、提醒和数据都只保存在这台设备。</p>
+      </div>
+
+      <div class="profile-card">
+        <span class="profile-ico">药</span>
+        <div>
+          <strong id="profileMedName">尚未建立药品档案</strong>
+          <p id="profileMedMeta">建立档案后，才能开始每日记录</p>
+        </div>
+      </div>
+
+      <section class="card menu-card">
+        <div class="menu-title">药品与提醒</div>
+        <button class="menu-item" data-action="open-med">
+          <span class="menu-ico">药</span>
+          <span class="menu-text"><strong>药品管理</strong><span id="menuMedDesc">名称、药位数、服药时间</span></span>
+          <span class="menu-arrow">›</span>
+        </button>
+        <button class="menu-item" data-nav="settings">
+          <span class="menu-ico">铃</span>
+          <span class="menu-text"><strong>提醒管理</strong><span id="menuReminderDesc">打开药药时提示</span></span>
+          <span class="menu-arrow">›</span>
+        </button>
+      </section>
+
+      <section class="card menu-card">
+        <div class="menu-title">数据</div>
+        <button class="menu-item" data-action="export-data">
+          <span class="menu-ico">图</span>
+          <span class="menu-text"><strong>数据导出</strong><span>生成近 7 天记录图片，保存到相册</span></span>
+          <span class="menu-arrow">›</span>
+        </button>
+        <button class="menu-item is-danger" data-action="clear-data">
+          <span class="menu-ico">删</span>
+          <span class="menu-text"><strong>数据删除</strong><span>清除本机全部记录与照片</span></span>
+          <span class="menu-arrow">›</span>
+        </button>
+      </section>
+
+      <section class="card menu-card">
+        <div class="menu-title">开发者</div>
+        <button class="menu-item" data-action="toggle-dev-mode" id="devModeBtn" aria-pressed="false">
+          <span class="menu-ico">测</span>
+          <span class="menu-text"><strong>开发者模式</strong><span id="devModeDesc">首页显示日期面板，可连续添加测试记录</span></span>
+          <span class="switch" id="devModeSwitch"></span>
+        </button>
+      </section>
+
+      <section class="card menu-card">
+        <div class="menu-title">关于</div>
+        <button class="menu-item" data-action="open-privacy">
+          <span class="menu-ico">私</span>
+          <span class="menu-text"><strong>隐私政策</strong><span>数据如何保存在本机</span></span>
+          <span class="menu-arrow">›</span>
+        </button>
+        <button class="menu-item" data-action="open-about">
+          <span class="menu-ico">介</span>
+          <span class="menu-text"><strong>产品介绍</strong><span>药药是什么，不做什么</span></span>
+          <span class="menu-arrow">›</span>
+        </button>
+        <button class="menu-item" data-action="open-feedback">
+          <span class="menu-ico">议</span>
+          <span class="menu-text"><strong>意见反馈</strong><span>记录在本机，不会上传</span></span>
+          <span class="menu-arrow">›</span>
+        </button>
+        <button class="menu-item" data-nav="settings">
+          <span class="menu-ico">设</span>
+          <span class="menu-text"><strong>设置</strong><span>提醒、数据与版本信息</span></span>
+          <span class="menu-arrow">›</span>
+        </button>
+      </section>
+
+      <p class="foot-note">药药是个人服药记录工具，不提供避孕效果判断、怀孕风险评估、漏服补服方案或用药建议。涉及服药调整，请咨询医生或药师。</p>
+    </section>
+
+    <!-- ==================== 药品管理 ==================== -->
+    <section class="page" data-page="med">
+      <div class="page-head">
+        <button class="link-btn" data-action="back-profile">‹ 返回</button>
+        <span class="eyebrow">MEDICATION</span>
+        <h1>药品管理</h1>
+        <p class="lead">这些信息只保存在本机，不会上传，也不会同步到其他设备。</p>
+      </div>
+
+      <section class="card">
+        <div class="field">
+          <label for="medName">药品名称</label>
+          <input id="medName" type="text" placeholder="按说明书填写，例如：短效口服药" maxlength="30">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="medSlots">每板药位数</label>
+            <select id="medSlots">
+              <option value="21">21 格</option>
+              <option value="28">28 格</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="medTime">习惯服药时间</label>
+            <input id="medTime" type="time" value="21:00">
+          </div>
+        </div>
+        <div class="switch-row">
+          <div class="switch-copy">
+            <strong>有 7 天停药期</strong>
+            <p>21 片服完后停药 7 天，首页药板下方会显示停药期。连续服药可以关闭。</p>
+          </div>
+          <button class="switch" id="medBreakSwitch" data-action="toggle-med-break" aria-pressed="true"></button>
+        </div>
+        <div class="field">
+          <label for="medMissed">多久算漏服</label>
+          <select id="medMissed">
+            <option value="2">超过习惯时间 2 小时</option>
+            <option value="4">超过习惯时间 4 小时</option>
+            <option value="6">超过习惯时间 6 小时</option>
+            <option value="8">超过习惯时间 8 小时</option>
+            <option value="12">超过习惯时间 12 小时</option>
+            <option value="24">超过习惯时间 24 小时</option>
+            <option value="next_day">到第二天才算漏服</option>
+          </select>
+          <p class="help">超过这里设定的时间还没记录，首页会显示漏服多久。</p>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="medPackNo">当前板号</label>
+            <input id="medPackNo" type="number" min="1" max="99" value="1">
+          </div>
+          <div class="field">
+            <label for="medStart">本板第 1 片日期</label>
+            <input id="medStart" type="date">
+          </div>
+        </div>
+        <div class="field">
+          <label for="medNote">备注（可选）</label>
+          <textarea id="medNote" rows="2" placeholder="例如：第几板、医生或药师交代的事项" maxlength="80"></textarea>
+        </div>
+        <button class="btn primary block" data-action="save-med">保存档案</button>
+        <p class="help">不同药品的排列和用法可能不同，请以你手里的说明书为准。</p>
+      </section>
+
+      <section class="card">
+        <h2>药板进度</h2>
+        <p class="muted" id="medBlisterText">第 1 板 · 已服 0 / 21</p>
+        <button class="btn ghost block" data-action="new-blister">换到下一板（从今天开始）</button>
+        <p class="help">换新板会把板号 +1、本板开始日期改为今天，历史记录与照片不受影响。</p>
+      </section>
+    </section>
+
+    <!-- ==================== 设置 ==================== -->
+    <section class="page" data-page="settings">
+      <div class="page-head">
+        <button class="link-btn" data-action="back-profile">‹ 返回</button>
+        <span class="eyebrow">SETTINGS</span>
+        <h1>设置</h1>
+        <p class="lead">提醒、数据与版本信息。</p>
+      </div>
+
+      <section class="card">
+        <div class="switch-row">
+          <div class="switch-copy">
+            <strong>打开时提示</strong>
+            <p>过了服药时间且今天还没记录时，首页会显示提示。</p>
+          </div>
+          <button class="switch" id="reminderSwitch" data-action="toggle-reminder" aria-pressed="false"></button>
+        </div>
+        <div class="field">
+          <label for="settingsTime">习惯服药时间</label>
+          <input id="settingsTime" type="time" value="21:00">
+        </div>
+        <button class="btn ghost block" data-action="save-settings-time">保存提醒时间</button>
+        <p class="help">小红书小工具没有系统通知能力，无法在你没打开时推送提醒。</p>
+      </section>
+
+      <section class="card menu-card">
+        <div class="menu-title">数据</div>
+        <button class="menu-item" data-action="export-data">
+          <span class="menu-ico">图</span>
+          <span class="menu-text"><strong>数据导出</strong><span>生成近 7 天记录图片</span></span>
+          <span class="menu-arrow">›</span>
+        </button>
+        <button class="menu-item is-danger" data-action="clear-data">
+          <span class="menu-ico">删</span>
+          <span class="menu-text"><strong>数据删除</strong><span>清除本机全部记录与照片</span></span>
+          <span class="menu-arrow">›</span>
+        </button>
+      </section>
+
+      <section class="card menu-card">
+        <div class="menu-title">关于</div>
+        <button class="menu-item" data-action="open-privacy">
+          <span class="menu-ico">私</span>
+          <span class="menu-text"><strong>隐私政策</strong><span>数据如何保存在本机</span></span>
+          <span class="menu-arrow">›</span>
+        </button>
+        <button class="menu-item" data-action="open-about">
+          <span class="menu-ico">介</span>
+          <span class="menu-text"><strong>产品介绍</strong><span>药药是什么，不做什么</span></span>
+          <span class="menu-arrow">›</span>
+        </button>
+        <button class="menu-item" data-action="open-feedback">
+          <span class="menu-ico">议</span>
+          <span class="menu-text"><strong>意见反馈</strong><span>记录在本机，不会上传</span></span>
+          <span class="menu-arrow">›</span>
+        </button>
+      </section>
+
+      <p class="foot-note">药药 V2.1 · 本机存储 · 无云端同步 · 无自动识别</p>
+    </section>
+  </main>
+
+  <nav class="tabbar">
+    <button class="tab is-active" data-nav="home"><span class="tab-ico">⌂</span><span>首页</span></button>
+    <button class="tab" data-nav="calendar"><span class="tab-ico">▦</span><span>日历</span></button>
+    <button class="tab" data-nav="profile"><span class="tab-ico">☰</span><span>我的</span></button>
+  </nav>
+</div>
+
+<div class="sheet-mask" id="sheetMask" hidden>
+  <div class="sheet" id="sheetBody"></div>
+</div>
+
+<div class="loading" id="loadingOverlay">
+  <span class="logo">药</span>
+  <p>正在读取本机记录…</p>
+</div>
+
+<input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
+<input id="albumInput" type="file" accept="image/*" hidden>
+
+<div class="toast" id="toast"></div>
+<script src="./assets/app.js"></script>
+</body>
+</html>
