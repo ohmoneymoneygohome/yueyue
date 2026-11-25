@@ -18,7 +18,8 @@
     day: 'calendar',
     profile: 'profile',
     med: 'profile',
-    settings: 'profile'
+    settings: 'profile',
+    leaflet: 'profile'
   };
 
   var platform = {
@@ -49,7 +50,10 @@
     skipPhoto: false,
     body: [],
     bodyOther: '',
-    loadError: false
+    loadError: false,
+    captureTarget: 'checkin',
+    fromPage: 'home',
+    breakCheckin: false
   };
 
   /* ========================================================= 基础工具 */
@@ -60,7 +64,7 @@
       medication: null,
       records: {},
       blister: { size: 21, taken: [] },
-      settings: { reminderOn: true, devMode: false },
+      settings: { reminderOn: true, devMode: false, onboarded: false },
       feedback: []
     };
   }
@@ -262,7 +266,7 @@
       if (Array.isArray(input.medication.pauses)) {
         input.medication.pauses.forEach(function (item) {
           if (!item || !item.start) return;
-          pauses.push({ start: item.start, end: item.end || '' });
+          pauses.push({ start: item.start, end: item.end || '', keepCount: !!item.keepCount });
         });
       }
       next.medication = {
@@ -274,10 +278,14 @@
           : (Number(input.medication.missedAfter) || 2),
         startDate: start,
         packStart: start,
+        startPill: Math.max(1, Math.min(Number(input.medication.slots) || 21, Number(input.medication.startPill) || 1)),
         packNo: Number(input.medication.packNo) || 1,
         hasBreak: input.medication.hasBreak !== false,
         note: input.medication.note || '',
-        pauses: pauses
+        pauses: pauses,
+        leaflet: Array.isArray(input.medication.leaflet)
+          ? input.medication.leaflet.filter(function (p) { return typeof p === 'string' && p; })
+          : []
       };
     }
     if (input.records && typeof input.records === 'object') {
@@ -287,6 +295,7 @@
         next.records[key] = {
           status: item.status === 'taken' || item.status === 'not_taken' || item.status === 'uncertain' ? item.status : '',
           pillIndex: Number(item.pillIndex) || 0,
+          packNo: Number(item.packNo) || 0,
           photo: item.photo || '',
           pillStates: item.pillStates && typeof item.pillStates === 'object' ? item.pillStates : {},
           changed: Array.isArray(item.changed) ? item.changed : [],
@@ -308,6 +317,7 @@
     if (input.settings && typeof input.settings === 'object') {
       next.settings.reminderOn = input.settings.reminderOn !== false;
       next.settings.devMode = input.settings.devMode === true;
+      next.settings.onboarded = input.settings.onboarded === true;
     }
     if (Array.isArray(input.feedback)) {
       next.feedback = input.feedback.slice(0, 20);
@@ -373,6 +383,11 @@
     return med.packStart || med.startDate || todayKey();
   }
 
+  function startPill() {
+    if (!state.medication) return 1;
+    return Math.max(1, Math.min(blisterSize(), Number(state.medication.startPill) || 1));
+  }
+
   function hasBreakPeriod() {
     var med = state.medication;
     return !!(med && Number(med.slots) === 21 && med.hasBreak !== false);
@@ -418,6 +433,7 @@
     var start = packStart();
     for (var i = 0; i < list.length; i++) {
       var p = list[i];
+      if (p.keepCount) continue;
       if (p.start < start) continue;
       if (key >= p.start && key < pauseScheduleEnd(p)) return true;
     }
@@ -430,6 +446,7 @@
     var total = 0;
     for (var i = 0; i < list.length; i++) {
       var p = list[i];
+      if (p.keepCount) continue;
       if (p.start < start) continue;
       var end = pauseScheduleEnd(p);
       if (end > key) end = key;
@@ -441,8 +458,9 @@
   function pillDateOf(index) {
     var size = blisterSize();
     var target = Math.max(1, Math.min(Number(index) || 1, size));
+    if (target < startPill()) return '';
     var d = packStart();
-    var count = 0;
+    var count = startPill() - 1;
     var guard = 0;
     while (guard < 2000) {
       if (!isPausedForSchedule(d)) {
@@ -462,8 +480,8 @@
   function pillIndexOn(key) {
     if (!state.medication || isPausedDate(key)) return 0;
     var diff = dayDiff(key, packStart()) - pausedDaysBefore(key);
-    if (diff < 0 || diff >= blisterSize()) return 0;
-    return diff + 1;
+    if (diff < 0 || diff >= blisterSize() - startPill() + 1) return 0;
+    return diff + startPill();
   }
 
   function breakDayNumber(key) {
@@ -474,6 +492,9 @@
   }
 
   function pillCellInfo(index) {
+    if (index < startPill()) {
+      return { key: '', state: 'unrecorded', dateText: '未记录' };
+    }
     var key = pillDateOf(index);
     var rec = state.records[key];
     var today = todayKey();
@@ -647,6 +668,244 @@
       else stats.uncertain++;
     }
     return stats;
+  }
+
+  function percentText(part, total) {
+    return total ? Math.round(part / total * 100) + '%' : '0%';
+  }
+
+  function adverseReactions(record) {
+    return record && record.body && Array.isArray(record.body.reactions)
+      ? record.body.reactions
+      : [];
+  }
+
+  function scheduledPillOn(key) {
+    var current = pillIndexOn(key);
+    if (current) return current;
+    var record = state.records[key];
+    return record && Number(record.pillIndex) ? Number(record.pillIndex) : 0;
+  }
+
+  function buildRecordStats() {
+    var stats = {
+      recordDays: 0,
+      takenDays: 0,
+      missedDays: 0,
+      uncertainDays: 0,
+      dueDays: 0,
+      bodyDays: 0,
+      adverseDays: 0,
+      fullPacks: 0,
+      months: {},
+      years: {},
+      reactions: {},
+      cycles: {},
+      cycleList: []
+    };
+    var today = todayKey();
+    var keyMap = {};
+    Object.keys(state.records).forEach(function (key) { keyMap[key] = true; });
+
+    if (state.medication) {
+      var d = packStart();
+      var guard = 0;
+      while (d <= today && guard < 2000) {
+        keyMap[d] = true;
+        d = addDays(d, 1);
+        guard++;
+      }
+    }
+
+    Object.keys(keyMap).sort().forEach(function (key) {
+      if (key > today) return;
+      var record = state.records[key];
+      var reactions = adverseReactions(record);
+      var hasBody = !!(record && record.body);
+      if (record && record.status) stats.recordDays++;
+      if (hasBody) {
+        stats.bodyDays++;
+        if (reactions.length) {
+          stats.adverseDays++;
+          reactions.forEach(function (name) {
+            stats.reactions[name] = (stats.reactions[name] || 0) + 1;
+          });
+        }
+      }
+
+      var paused = isPausedDate(key);
+      var breakNo = breakDayNumber(key);
+      var pill = scheduledPillOn(key);
+      if (!pill || paused || breakNo) return;
+
+      var taken = !!(record && record.status === 'taken');
+      var uncertain = !!(record && record.status === 'uncertain');
+      var missed = !taken && !uncertain && (key < today || !!missedInfo(key));
+      stats.dueDays++;
+      if (taken) stats.takenDays++;
+      if (uncertain) stats.uncertainDays++;
+      if (missed) stats.missedDays++;
+
+      var monthKey = key.slice(0, 7);
+      var yearKey = key.slice(0, 4);
+      if (!stats.months[monthKey]) stats.months[monthKey] = { taken: 0, missed: 0, uncertain: 0 };
+      if (!stats.years[yearKey]) stats.years[yearKey] = { taken: 0, missed: 0, uncertain: 0 };
+      if (taken) {
+        stats.months[monthKey].taken++;
+        stats.years[yearKey].taken++;
+      } else if (uncertain) {
+        stats.months[monthKey].uncertain++;
+        stats.years[yearKey].uncertain++;
+      } else if (missed) {
+        stats.months[monthKey].missed++;
+        stats.years[yearKey].missed++;
+      }
+
+      var cycleNo = record && Number(record.packNo)
+        ? Number(record.packNo)
+        : (pillIndexOn(key) ? packNo() : 0);
+      if (!cycleNo) return;
+      if (!stats.cycles[cycleNo]) {
+        stats.cycles[cycleNo] = {
+          packNo: cycleNo,
+          days: 0,
+          recorded: 0,
+          taken: 0,
+          missed: 0,
+          bodyDays: 0,
+          adverseDays: 0,
+          pills: {},
+          recordedPills: {},
+          full: false
+        };
+      }
+      var cycle = stats.cycles[cycleNo];
+      cycle.days++;
+      cycle.pills[pill] = true;
+      if (record && record.status) {
+        cycle.recorded++;
+        cycle.recordedPills[pill] = true;
+      }
+      if (taken) cycle.taken++;
+      if (missed) cycle.missed++;
+      if (hasBody) cycle.bodyDays++;
+      if (reactions.length) cycle.adverseDays++;
+    });
+
+    Object.keys(stats.cycles).forEach(function (key) {
+      var cycle = stats.cycles[key];
+      var expected = cycle.packNo === packNo()
+        ? blisterSize() - startPill() + 1
+        : blisterSize();
+      cycle.full = Object.keys(cycle.recordedPills).length >= expected;
+      if (cycle.full) stats.fullPacks++;
+      stats.cycleList.push(cycle);
+    });
+    stats.cycleList.sort(function (a, b) { return b.packNo - a.packNo; });
+    return stats;
+  }
+
+  function metricHtml(label, value, note) {
+    return '<div class="metric-item"><span>' + label + '</span><strong>' + value + '</strong>' +
+      (note ? '<small>' + note + '</small>' : '') + '</div>';
+  }
+
+  function renderRecordStats(year, month) {
+    var stats = buildRecordStats();
+    $('recordOverview').innerHTML =
+      metricHtml('完整记录药板', stats.fullPacks + ' 板', '有效药位均有记录') +
+      metricHtml('服药天数', stats.takenDays + ' 天', '不含停药与手动停药') +
+      metricHtml('记录天数', stats.recordDays + ' 天', '所有已确认记录') +
+      metricHtml('漏服次数', stats.missedDays + ' 次', '按当前漏服规则') +
+      metricHtml('漏服率', percentText(stats.missedDays, stats.dueDays), '漏服 / 应服药天数') +
+      metricHtml('身体状态记录', stats.bodyDays + ' 天', '含良好与不适');
+
+    var selected = stats.months[year + '-' + pad2(month + 1)] || { taken: 0, missed: 0, uncertain: 0 };
+    $('monthSummary').innerHTML =
+      '<span>本月已服<b>' + selected.taken + '</b></span>' +
+      '<span>漏服<b>' + selected.missed + '</b></span>' +
+      '<span>不确定<b>' + selected.uncertain + '</b></span>';
+
+    $('chartYear').textContent = year + ' 年';
+    var maxMonth = 0;
+    var m;
+    for (m = 0; m < 12; m++) {
+      var item = stats.months[year + '-' + pad2(m + 1)] || { taken: 0, missed: 0, uncertain: 0 };
+      maxMonth = Math.max(maxMonth, item.taken + item.missed + item.uncertain);
+    }
+    var monthHtml = '';
+    for (m = 0; m < 12; m++) {
+      var data = stats.months[year + '-' + pad2(m + 1)] || { taken: 0, missed: 0, uncertain: 0 };
+      var total = data.taken + data.missed + data.uncertain;
+      var height = maxMonth && total ? Math.max(8, Math.round(total / maxMonth * 100)) : 0;
+      monthHtml += '<div class="month-col" title="' + (m + 1) + ' 月：已服 ' + data.taken +
+        ' 天，漏服 ' + data.missed + ' 次，不确定 ' + data.uncertain + ' 天">' +
+        '<div class="month-track"><div class="month-stack' + (total ? '' : ' is-zero') + '" style="height:' + height + '%">' +
+        '<i class="seg-uncertain" style="height:' + (total ? data.uncertain / total * 100 : 0) + '%"></i>' +
+        '<i class="seg-missed" style="height:' + (total ? data.missed / total * 100 : 0) + '%"></i>' +
+        '<i class="seg-taken" style="height:' + (total ? data.taken / total * 100 : 0) + '%"></i>' +
+        '</div></div><span>' + (m + 1) + '月</span></div>';
+    }
+    $('monthChart').innerHTML = monthHtml;
+
+    var years = Object.keys(stats.years);
+    if (years.indexOf(String(year)) === -1) years.push(String(year));
+    years.sort(function (a, b) { return Number(b) - Number(a); });
+    var maxYear = 0;
+    years.forEach(function (y) {
+      var item = stats.years[y] || { taken: 0, missed: 0, uncertain: 0 };
+      maxYear = Math.max(maxYear, item.taken + item.missed + item.uncertain);
+    });
+    var yearHtml = '';
+    years.forEach(function (y) {
+      var item = stats.years[y] || { taken: 0, missed: 0, uncertain: 0 };
+      var total = item.taken + item.missed + item.uncertain;
+      yearHtml += '<div class="year-row"><span>' + y + '</span>' +
+        '<div class="year-track">' +
+        '<i class="seg-taken" style="width:' + (maxYear ? item.taken / maxYear * 100 : 0) + '%"></i>' +
+        '<i class="seg-missed" style="width:' + (maxYear ? item.missed / maxYear * 100 : 0) + '%"></i>' +
+        '<i class="seg-uncertain" style="width:' + (maxYear ? item.uncertain / maxYear * 100 : 0) + '%"></i>' +
+        '</div><b>' + total + ' 天</b></div>';
+    });
+    $('yearChart').innerHTML = yearHtml;
+
+    $('bodyOverview').innerHTML =
+      metricHtml('不良反应天数', stats.adverseDays + ' 天', '有任一不适') +
+      metricHtml('不良反应率', percentText(stats.adverseDays, stats.bodyDays), '不适 / 身体记录') +
+      metricHtml('良好天数', Math.max(0, stats.bodyDays - stats.adverseDays) + ' 天', '无不适记录');
+
+    var reactionNames = ['痛经', '出血', '恶心', '其他'];
+    var maxReaction = 0;
+    reactionNames.forEach(function (name) {
+      maxReaction = Math.max(maxReaction, stats.reactions[name] || 0);
+    });
+    var reactionHtml = '';
+    reactionNames.forEach(function (name) {
+      var count = stats.reactions[name] || 0;
+      reactionHtml += '<div class="reaction-row"><span>' + name + '</span>' +
+        '<div class="reaction-track"><i style="width:' + (maxReaction ? count / maxReaction * 100 : 0) + '%"></i></div>' +
+        '<b>' + count + ' 天</b></div>';
+    });
+    $('reactionChart').innerHTML = reactionHtml;
+
+    var adverseCycles = stats.cycleList.filter(function (cycle) { return cycle.adverseDays > 0; }).length;
+    $('cycleSummary').innerHTML = stats.cycleList.length
+      ? '<div class="cycle-summary"><strong>' + adverseCycles + ' / ' + stats.cycleList.length + '</strong>' +
+        '<span>个服药周期有不良反应 · 周期比率 ' + percentText(adverseCycles, stats.cycleList.length) + '</span></div>'
+      : '<p class="empty">还没有可统计的服药周期。</p>';
+
+    var cycleHtml = '';
+    stats.cycleList.forEach(function (cycle) {
+      var rate = percentText(cycle.adverseDays, cycle.bodyDays);
+      var width = cycle.bodyDays ? cycle.adverseDays / cycle.bodyDays * 100 : 0;
+      cycleHtml += '<div class="cycle-item">' +
+        '<div class="cycle-top"><strong>第 ' + cycle.packNo + ' 板' +
+        (cycle.full ? '<span class="cycle-badge">完整记录</span>' : '') + '</strong>' +
+        '<span>不适 ' + cycle.adverseDays + ' / ' + cycle.bodyDays + ' 天 · ' + rate + '</span></div>' +
+        '<div class="cycle-track"><i style="width:' + width + '%"></i></div>' +
+        '<p>服药 ' + cycle.taken + ' 天 · 漏服 ' + cycle.missed + ' 次 · 有效记录 ' + cycle.recorded + ' 天</p></div>';
+    });
+    $('cycleStats').innerHTML = cycleHtml;
   }
 
   /* ========================================================= 图片处理 */
@@ -862,6 +1121,38 @@
     btn.setAttribute('title', MASCOT_LABEL[name] || '我的');
   }
 
+  function renderReminderList(container, items) {
+    if (!container) return;
+    container.innerHTML = '';
+    if (!items || !items.length) { container.hidden = true; return; }
+    container.hidden = false;
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      var row = document.createElement('div');
+      row.className = 'tr-item tr-' + it.level;
+      if (it.level === 'hint') {
+        row.textContent = it.text;
+      } else {
+        var badge = document.createElement('span');
+        badge.className = 'tr-badge';
+        badge.textContent = it.level === 'alert' ? '告警' : '提醒';
+        var txt = document.createElement('span');
+        txt.className = 'tr-text';
+        txt.textContent = it.text;
+        row.appendChild(badge);
+        row.appendChild(txt);
+        if (it.action) {
+          var btn = document.createElement('button');
+          btn.className = 'link-btn';
+          btn.setAttribute('data-action', it.action);
+          btn.textContent = it.actionText || '查看';
+          row.appendChild(btn);
+        }
+      }
+      container.appendChild(row);
+    }
+  }
+
   function renderHome() {
     var today = todayKey();
     var shown = parseKey(today);
@@ -893,6 +1184,7 @@
     var pillIdx = med ? pillIndexOn(todayKey()) : 0;
     var pillPrefix = pillIdx ? '第 ' + pillIdx + ' 片 · ' : '';
     var canSwitch = !!med && (!!paused || (!breakNo && todayKey() <= pillDateOf(blisterSize())));
+    var showMissedAlert = false;
 
     $('recordSwitch').hidden = !canSwitch;
     $('pauseOpt').className = 'rs-opt' + (paused ? ' is-on' : '');
@@ -922,12 +1214,15 @@
     } else if (breakNo) {
       card.className = 'today-card today-hero is-break';
       captureBtn.className = 'shutter is-break';
-      captureBtn.setAttribute('data-action', '');
+      captureBtn.setAttribute('data-action', 'break-checkin');
+      captureBtn.setAttribute('aria-label', '停药期快速打卡');
       statusEl.className = 'status break';
       statusEl.textContent = '停药期';
       title.textContent = '今天是停药期第 ' + breakNo + ' 天';
-      lead.textContent = '本板药片已经服完，接下来 7 天无需服药。';
-      captureLabel.textContent = '无需服药';
+      lead.textContent = record
+        ? '今天已打卡。停药期也可以每天打开记一下身体状况，保持习惯不容易漏服。'
+        : '本板药片已经服完，接下来 7 天无需服药。每天打开记一下身体状况，保持习惯不容易漏服。';
+      captureLabel.textContent = record ? '再记一下' : '快速打卡';
       if (record) {
         secondary.hidden = false;
         secondary.textContent = '查看今天的记录';
@@ -952,6 +1247,7 @@
         lead.textContent = '今天该吃第 ' + pillIdx + ' 片，已经超过习惯服药时间。' +
           '如果其实已经吃了，点一下圆圈补记今天的服药情况。';
         captureLabel.textContent = '补记今天';
+        showMissedAlert = true;
       } else if (state.settings.reminderOn && isPastReminder()) {
         captureBtn.className = 'shutter is-pending';
         card.className = 'today-card today-hero is-pending';
@@ -991,6 +1287,7 @@
       title.textContent = '今天标记为尚未服用';
       lead.textContent = '今天还没有吃，先如实记下。点圆圈可以重新记录。';
       captureLabel.textContent = '重新记录';
+      showMissedAlert = true;
       secondary.hidden = false;
       secondary.textContent = '查看今天的记录';
     } else {
@@ -1010,6 +1307,20 @@
         (pendingPause.start === addDays(todayKey(), 1) ? '明天' : ' ' + monthDayText(pendingPause.start)) +
         '开始停止服药。';
     }
+    // 今日卡分级提醒：提示 / 提醒（黄）/ 告警（红）
+    var reminders = [];
+    if (showMissedAlert) {
+      reminders.push({ level: 'alert', text: '漏服后的处理请以药品说明书为准，或咨询医生/药师。', action: 'open-leaflet', actionText: '查看说明书' });
+    }
+    if (med && !breakNo && !paused && pillIdx > 0 && todayKey() <= pillDateOf(blisterSize())) {
+      var takenToday = !!(record && record.status === 'taken');
+      var remaining = blisterSize() - pillIdx + (takenToday ? 0 : 1);
+      if (remaining > 0 && remaining <= 5) {
+        reminders.push({ level: 'reminder', text: '本板还剩 ' + remaining + ' 颗，药品不足，请提前采购和准备。' });
+      }
+    }
+    renderReminderList($('todayReminders'), reminders);
+
     $('heroFoot').hidden = secondary.hidden && !canSwitch;
 
     renderBlister();
@@ -1041,6 +1352,7 @@
     state.records[key] = {
       status: status,
       pillIndex: pillIndexOn(key),
+      packNo: pillIndexOn(key) ? packNo() : (Number(prev.packNo) || 0),
       photo: prev.photo || '',
       pillStates: prev.pillStates || {},
       changed: prev.changed || [],
@@ -1075,10 +1387,19 @@
     var info = pillCellInfo(index);
     var cls = 'bpill is-' + info.state + (info.key === todayKey() ? ' is-today' : '');
     var mark = info.state === 'uncertain' ? '<span class="bpill-mark">?</span>' : '';
-    return '<button class="' + cls + '" data-action="open-day" data-date="' + info.key + '">' +
+    return '<button class="' + cls + '" data-action="open-day" data-date="' + info.key + '"' +
+      (info.state === 'unrecorded' ? ' disabled aria-label="第 ' + index + ' 片，开始记录前未记录"' : '') + '>' +
       '<span class="bpill-dot"><i>' + index + '</i>' + mark + '</span>' +
       '<span class="bpill-date">' + esc(info.dateText) + '</span>' +
       '</button>';
+  }
+
+  function leafletEntryHtml() {
+    var med = state.medication;
+    var name = med && med.name ? med.name : '说明书';
+    return '<button type="button" class="blister-groove is-leaflet" data-action="open-leaflet" aria-label="查看 ' + esc(name) + ' 的说明书">' +
+      '<span class="groove-name">' + esc(name) + '</span>' +
+      '<span class="groove-cue">说明书 ›</span></button>';
   }
 
   function renderBlister() {
@@ -1108,7 +1429,7 @@
       for (var i = 1; i <= 10; i++) html += blisterCell(i);
       html += '</div>';
       html += '<div class="blister-row is-mid">' +
-        '<div class="blister-groove" aria-hidden="true"><span>YASMIN</span></div>' +
+        leafletEntryHtml() +
         blisterCell(11) + '</div>';
       html += '<div class="blister-row is-bottom">';
       for (var j = 21; j >= 12; j--) html += blisterCell(j);
@@ -1116,6 +1437,7 @@
     } else {
       html += '<div class="blister-grid-alt">';
       for (var k = 1; k <= size; k++) html += blisterCell(k);
+      html += leafletEntryHtml();
       html += '</div>';
     }
     grid.innerHTML = html;
@@ -1127,7 +1449,8 @@
     $('blisterProgress').textContent = count + ' / ' + size;
     $('blisterBar').style.width = percent + '%';
     $('packBadge').textContent = '第 ' + packNo() + ' 板 · ' + size + ' 片';
-    $('packHint').textContent = shortDate(packStart()) + ' 开始';
+    $('packHint').textContent = shortDate(packStart()) + (startPill() > 1 ? ' 从第 ' + startPill() + ' 片开始' : ' 开始');
+    $('unrecordedLegend').hidden = startPill() <= 1;
 
     var breakOn = hasBreakPeriod() && size === 21;
     $('breakWrap').hidden = !breakOn;
@@ -1183,9 +1506,10 @@
     var html = '';
     keys.forEach(function (key) {
       var record = state.records[key];
+      var mainLabel = breakDayNumber(key) ? '停药期打卡' : statusText(record.status);
       html += '<button class="record" data-action="open-day" data-date="' + key + '">' +
         '<span class="record-date">' + monthDayText(key) + '</span>' +
-        '<span class="record-main">' + esc(statusText(record.status)) +
+        '<span class="record-main">' + esc(mainLabel) +
         '<span class="record-sub">' + (timeText(record.updatedAt || record.createdAt) || '--') + ' 记录' +
         (record.photo ? ' · 有照片' : '') + '</span></span>' +
         '<span class="record-dot ' + esc(record.status) + '"></span>' +
@@ -1210,6 +1534,20 @@
     $('qualityCard').hidden = !hasPhoto;
     $('previewShot').hidden = !hasPhoto;
     $('markPillsBtn').hidden = !hasPhoto;
+
+    var breakPrimary = document.querySelector('#previewStep .btn-row .btn.primary');
+    var breakSecondary = document.querySelector('#previewStep .secondary-row');
+    var breakRetake = $('retakeBtn');
+    if (view.breakCheckin) {
+      $('previewTitle').textContent = '停药期打卡';
+      if (breakPrimary) { breakPrimary.textContent = '保存打卡'; breakPrimary.setAttribute('data-action', 'save-break-checkin'); }
+      if (breakSecondary) breakSecondary.hidden = true;
+      if (breakRetake) breakRetake.hidden = true;
+    } else {
+      if (breakPrimary) { breakPrimary.textContent = '确认已服用'; breakPrimary.setAttribute('data-action', 'confirm-taken'); }
+      if (breakSecondary) breakSecondary.hidden = false;
+      if (breakRetake) breakRetake.hidden = false;
+    }
 
     var retake = $('retakeBtn');
     retake.textContent = hasPhoto ? '重新拍摄' : '去拍照';
@@ -1425,52 +1763,98 @@
 
   /* ========================================================= 渲染：日历 */
 
+  function calendarDayState(key) {
+    var record = state.records[key];
+    if (isPausedDate(key)) return 'paused';
+    if (breakDayNumber(key)) return 'break';
+    if (record && record.status === 'taken') return 'taken';
+    if (record && record.status === 'uncertain') return 'uncertain';
+    if (record && record.status === 'not_taken') return 'missed';
+
+    var pill = scheduledPillOn(key);
+    if (pill && (key < todayKey() || missedInfo(key))) return 'missed';
+    if (pill && key === todayKey()) return 'pending';
+    return 'empty';
+  }
+
+  function linkedPackInfo(key) {
+    if (!state.medication || key > todayKey() || isPausedDate(key) || breakDayNumber(key)) return null;
+    var record = state.records[key];
+    var currentPill = pillIndexOn(key);
+    var pill = currentPill || (record && Number(record.pillIndex)) || 0;
+    if (!pill) return null;
+    var pack = record && Number(record.packNo)
+      ? Number(record.packNo)
+      : (currentPill ? packNo() : 0);
+    return { pack: pack, pill: pill };
+  }
+
+  function sameLinkedPack(a, b) {
+    var left = linkedPackInfo(a);
+    var right = linkedPackInfo(b);
+    if (!left || !right) return false;
+    if (left.pack && right.pack && left.pack !== right.pack) return false;
+    return right.pill === left.pill + 1;
+  }
+
   function renderCalendar() {
     var year = view.month.getFullYear();
     var month = view.month.getMonth();
-    var first = new Date(year, month, 1);
-    var total = new Date(year, month + 1, 0).getDate();
-    var offset = (first.getDay() + 6) % 7;
+    var start = new Date(year, month, 1);
+    start.setDate(start.getDate() - 15);
+    var end = new Date(year, month + 1, 15);
+    var offset = (start.getDay() + 6) % 7;
     var grid = $('calGrid');
     var html = '';
     var weekdays = ['一', '二', '三', '四', '五', '六', '日'];
+    var stateNames = {
+      taken: '已服', pending: '待服', missed: '漏服', uncertain: '不确定',
+      break: '停药期', paused: '手动停药', empty: '未记录'
+    };
 
     $('calTitle').textContent = year + ' 年 ' + (month + 1) + ' 月';
+    $('calRange').textContent = shortDate(dateKey(start)) + ' – ' + shortDate(dateKey(end));
 
     weekdays.forEach(function (name) {
       html += '<div class="cal-wd">' + name + '</div>';
     });
-    for (var b = 0; b < offset; b++) {
-      html += '<div class="cal-blank"></div>';
-    }
+    for (var b = 0; b < offset; b++) html += '<div class="cal-blank"></div>';
 
-    var today = todayKey();
-    for (var day = 1; day <= total; day++) {
-      var key = year + '-' + pad2(month + 1) + '-' + pad2(day);
+    var cells = offset;
+    for (var d = new Date(start.getTime()); d <= end; d.setDate(d.getDate() + 1)) {
+      var key = dateKey(d);
+      var day = d.getDate();
+      var stateName = calendarDayState(key);
+      var linked = !!linkedPackInfo(key);
+      var linkLeft = linked && d.getDay() !== 1 && sameLinkedPack(addDays(key, -1), key);
+      var linkRight = linked && d.getDay() !== 0 && sameLinkedPack(key, addDays(key, 1));
+      var cls = 'cal-day is-' + stateName;
+      if (d.getMonth() !== month) cls += ' is-adjacent';
+      if (linked) cls += ' is-linked';
+      if (linkLeft) cls += ' link-left';
+      if (linkRight) cls += ' link-right';
+      if (key === todayKey()) cls += ' is-today';
       var record = state.records[key];
-      var paused = isPausedDate(key);
-      var cls = 'cal-day';
-      if (record) {
-        if (record.status === 'taken') cls += ' is-taken';
-        else if (record.status === 'not_taken') cls += ' is-not-taken';
-        else cls += ' is-uncertain';
-      } else if (paused) {
-        cls += ' is-paused';
-      } else {
-        cls += ' is-empty';
-      }
-      if (key === today) cls += ' is-today';
-      html += '<button class="' + cls + '" data-action="open-day" data-date="' + key + '">' + day + '</button>';
+      var reactions = adverseReactions(record);
+      var adverseText = reactions.length ? esc(reactions.join(' / ')) : '';
+      if (reactions.length) cls += ' has-adverse';
+      var pill = pillIndexOn(key);
+      var title = (d.getMonth() + 1) + ' 月 ' + day + ' 日 · ' + stateNames[stateName] +
+        (pill ? ' · 第 ' + pill + ' 片' : '') +
+        (reactions.length ? ' · 不良反应：' + reactions.join('、') : '');
+      html += '<button class="' + cls + '" data-action="open-day" data-date="' + key + '" title="' + title + '">' +
+        '<span>' + day + '</span>' +
+        (adverseText ? '<small class="cal-adverse">' + adverseText + '</small>' : '') +
+        (day === 1 ? '<small class="cal-month-mark">' + (d.getMonth() + 1) + '月</small>' : '') +
+        '</button>';
+      cells++;
+    }
+    while (cells % 7) {
+      html += '<div class="cal-blank"></div>';
+      cells++;
     }
     grid.innerHTML = html;
-
-    var stats = monthStats(year, month);
-    $('monthSummary').innerHTML =
-      '<span>已确认<b>' + stats.taken + '</b></span>' +
-      '<span>尚未服用<b>' + stats.notTaken + '</b></span>' +
-      '<span>不确定<b>' + stats.uncertain + '</b></span>' +
-      (stats.paused ? '<span>停止服药<b>' + stats.paused + '</b></span>' : '') +
-      '<span>未记录<b>' + stats.none + '</b></span>';
+    renderRecordStats(year, month);
   }
 
   /* ========================================================= 渲染：历史详情 */
@@ -1595,6 +1979,11 @@
     $('menuReminderDesc').textContent = state.settings.reminderOn
       ? '打开时提示 · ' + (med && med.time ? med.time : '21:00')
       : '已关闭打开时提示';
+    var leafletCount = med && Array.isArray(med.leaflet) ? med.leaflet.length : 0;
+    var menuLeafletDesc = $('menuLeafletDesc');
+    if (menuLeafletDesc) menuLeafletDesc.textContent = med
+      ? (leafletCount ? ('已拍 ' + leafletCount + ' 张 · 点击查看') : '拍照保存，随时查看')
+      : '建立档案后可拍照保存';
 
     var devOn = !!state.settings.devMode;
     $('devModeBtn').setAttribute('aria-pressed', devOn ? 'true' : 'false');
@@ -1611,13 +2000,22 @@
     $('settingsTime').value = (state.medication && state.medication.time) ? state.medication.time : '21:00';
   }
 
+  function renderMedStartPill(value) {
+    var slots = Number($('medSlots').value) || 21;
+    var current = Math.max(2, Math.min(slots, Number(value) || 2));
+    var html = '';
+    for (var i = 2; i <= slots; i++) {
+      html += '<option value="' + i + '">第 ' + i + ' 片（之前 ' + (i - 1) + ' 片未记录）</option>';
+    }
+    $('medStartPill').innerHTML = html;
+    $('medStartPill').value = String(current);
+  }
+
   function renderMedForm() {
     var med = state.medication;
     $('medName').value = med ? med.name : '';
     $('medSlots').value = String(med ? Number(med.slots) : 21);
     $('medTime').value = med && med.time ? med.time : '21:00';
-    $('medStart').value = med ? (med.packStart || med.startDate || todayKey()) : todayKey();
-    $('medPackNo').value = med ? (Number(med.packNo) || 1) : 1;
     $('medMissed').value = med && med.missedAfter === 'next_day'
       ? 'next_day'
       : String(med ? (Number(med.missedAfter) || 2) : 2);
@@ -1627,6 +2025,15 @@
     var sw = $('medBreakSwitch');
     sw.className = 'switch' + (hasBreak ? ' is-on' : '');
     sw.setAttribute('aria-pressed', hasBreak ? 'true' : 'false');
+
+    var firstPill = med ? Math.max(1, Number(med.startPill) || 1) : 1;
+    var midway = firstPill > 1;
+    var midwaySw = $('medMidwaySwitch');
+    midwaySw.className = 'switch' + (midway ? ' is-on' : '');
+    midwaySw.setAttribute('aria-pressed', midway ? 'true' : 'false');
+    $('medStartPillWrap').hidden = !midway;
+    renderMedStartPill(midway ? firstPill : 2);
+    renderLeafletEditor();
   }
 
   /* ========================================================= 页面切换 */
@@ -1656,6 +2063,7 @@
     else if (name === 'profile') renderProfile();
     else if (name === 'settings') renderSettings();
     else if (name === 'med') renderMedForm();
+    else if (name === 'leaflet') renderLeafletPage();
   }
 
   function openCheckin() {
@@ -1671,11 +2079,38 @@
     view.changed = [];
     view.status = record ? record.status : '';
     view.skipPhoto = false;
+    view.breakCheckin = false;
     view.body = record && record.body && Array.isArray(record.body.reactions)
       ? record.body.reactions.slice()
       : [];
     view.bodyOther = record && record.body && record.body.note ? record.body.note : '';
 
+    renderCheckin();
+    switchPage('checkin');
+  }
+
+  function openBreakCheckin() {
+    if (!state.medication) {
+      switchPage('med');
+      toast('先建立药品档案，再开始打卡');
+      return;
+    }
+    var key = todayKey();
+    var record = state.records[key];
+    view.dateKey = key;
+    view.photoData = '';
+    view.existingPhoto = '';
+    view.quality = null;
+    view.crops = [];
+    view.pillStates = {};
+    view.changed = [];
+    view.status = record ? record.status : '';
+    view.skipPhoto = true;
+    view.breakCheckin = true;
+    view.body = record && record.body && Array.isArray(record.body.reactions)
+      ? record.body.reactions.slice()
+      : [];
+    view.bodyOther = record && record.body && record.body.note ? record.body.note : '';
     renderCheckin();
     switchPage('checkin');
   }
@@ -1735,7 +2170,7 @@
   function nextPillOnResume() {
     var size = blisterSize();
     var d = packStart();
-    var count = 0;
+    var count = startPill() - 1;
     var guard = 0;
     while (d < todayKey() && guard < 2000) {
       if (!isPausedForSchedule(d)) count++;
@@ -1745,17 +2180,28 @@
     return count < size ? count + 1 : 0;
   }
 
+  function nextPillOnResumeContinuous() {
+    var size = blisterSize();
+    var pill = dayDiff(todayKey(), packStart()) + startPill();
+    if (pill < 1 || pill > size) return 0;
+    return pill;
+  }
+
   function openResumeSheet() {
     var p = activePause(todayKey());
     if (!p) return;
     var days = pauseDayNumber(todayKey());
     var next = nextPillOnResume();
+    var calNext = nextPillOnResumeContinuous();
     var html = '<h3>继续记录</h3>' +
       '<p class="sheet-sub">已停止 ' + days + ' 天。选择药板接下来怎么接。</p>' +
       '<div class="confirm-list">' +
       (next ? '<button class="confirm-opt" data-action="resume-med" data-mode="continue">' +
       '<span class="opt-ico">续</span>' +
       '<span class="opt-body"><strong>继续本板</strong><span>暂停的天数顺延，下次从第 ' + next + ' 片继续</span></span></button>' : '') +
+      (calNext ? '<button class="confirm-opt" data-action="resume-med" data-mode="continuous">' +
+      '<span class="opt-ico">连</span>' +
+      '<span class="opt-body"><strong>接着停药那天</strong><span>暂停的天数计入药板，今天从第 ' + calNext + ' 片继续</span></span></button>' : '') +
       '<button class="confirm-opt" data-action="resume-med" data-mode="new">' +
       '<span class="opt-ico">新</span>' +
       '<span class="opt-body"><strong>换新板</strong><span>从第 1 片重新开始，旧板剩余药片不再使用</span></span></button>' +
@@ -1799,16 +2245,23 @@
       return;
     }
     p.end = todayKey();
-    if (mode === 'new') {
+    if (mode === 'continuous') {
+      p.keepCount = true;
+    } else if (mode === 'new') {
       med.packNo = packNo() + 1;
       med.packStart = todayKey();
       med.startDate = todayKey();
+      med.startPill = 1;
       state.blister.taken = [];
     }
     persist().then(function (ok) {
       closeSheet();
       renderAll();
-      if (ok) toast(mode === 'new' ? '已换到第 ' + packNo() + ' 板并继续记录' : '已继续记录');
+      if (ok) {
+        toast(mode === 'new' ? ('已换到第 ' + packNo() + ' 板并继续记录')
+          : (mode === 'continuous' ? '已继续记录，暂停天数计入药板'
+          : '已继续记录'));
+      }
     });
   }
 
@@ -1863,7 +2316,9 @@
       '<p>药药不注册账号，不采集姓名、手机号、定位或通讯录。</p>' +
       '<p style="margin-top:10px">药品档案、每日记录、药位标记和照片，只写入当前小红书小工具在本机的沙箱存储，不会上传到服务器，也不会同步到其他设备。</p>' +
       '<p style="margin-top:10px">导出的记录图片由本机生成，只有你主动保存时才会写入系统相册。</p>' +
-      '<p style="margin-top:10px">卸载小工具、清理沙箱或手动删除数据后，记录与照片无法恢复。</p>' +
+      '<p style="margin-top:10px">数据备份由你主动生成并复制保存，备份文本包含服药记录等私密信息，请妥善保管，不要分享给他人。</p>' +
+      '<p style="margin-top:10px">药药不判断避孕效果，不评估怀孕风险，不提供补服、剂量或停药建议；漏服等情况的处理请以药品说明书为准，或咨询医生、药师。</p>' +
+      '<p style="margin-top:10px">卸载小工具、清理沙箱或手动删除数据后，未备份的记录与照片无法恢复。</p>' +
       '<button class="btn ghost block" data-action="close-sheet">知道了</button>');
   }
 
@@ -1882,6 +2337,29 @@
       '<textarea id="feedbackText" rows="4" placeholder="例如：哪里不好用、希望增加什么" maxlength="300"></textarea>' +
       '<button class="btn primary block" data-action="submit-feedback">保存反馈</button>' +
       '<button class="btn ghost block" data-action="close-sheet">取消</button>');
+  }
+
+  function openWelcome() {
+    showSheet('<h3>欢迎使用药药</h3>' +
+      '<p class="sheet-sub">每天 10 秒，把服药情况记清楚。</p>' +
+      '<p>1. 建立档案：填药名、每板药位数和习惯服药时间；已经在吃这一板，可以选择从第几片开始。</p>' +
+      '<p style="margin-top:10px">2. 每天打卡：拍张药板照片，点「确认已服用」即可；漏服、不确定也能如实记下。</p>' +
+      '<p style="margin-top:10px">3. 数据只在本机：不上传、不同步。换手机或清理数据前，记得在「我的 → 备份数据」导出备份。</p>' +
+      '<p class="sheet-sub" style="margin-top:10px">药药不判断避孕效果，不提供补服或用药建议，具体以药品说明书和医生建议为准。</p>' +
+      '<button class="btn primary block" data-action="welcome-med">建立我的药品档案</button>' +
+      '<button class="btn ghost block" data-action="welcome-skip">先看看</button>');
+  }
+
+  function finishWelcome() {
+    state.settings.onboarded = true;
+    persist();
+    closeSheet();
+  }
+
+  function maybeWelcome() {
+    if (state.settings.onboarded) return;
+    if (state.medication || Object.keys(state.records).length) return;
+    openWelcome();
   }
 
   function openDayPhoto() {
@@ -1940,7 +2418,7 @@
       return;
     }
     if (breakDayNumber(todayKey())) {
-      toast('今天是停药期，无需服药');
+      openBreakCheckin();
       return;
     }
     openCheckin();
@@ -2006,6 +2484,7 @@
       state.records[key] = {
         status: view.status,
         pillIndex: pillIndexOn(key),
+        packNo: pillIndexOn(key) ? packNo() : (Number(previous.packNo) || 0),
         photo: photoPath || (platform.active ? '' : view.photoData) ||
           view.existingPhoto || previous.photo || '',
         pillStates: view.pillStates,
@@ -2058,6 +2537,7 @@
       record = {
         status: status,
         pillIndex: pillIndexOn(key),
+        packNo: pillIndexOn(key) ? packNo() : 0,
         photo: '',
         pillStates: {},
         changed: [],
@@ -2072,6 +2552,7 @@
       record.status = status;
       record.updatedAt = now;
       if (!record.pillIndex) record.pillIndex = pillIndexOn(key);
+      if (!record.packNo && record.pillIndex) record.packNo = packNo();
       if (status === 'taken') {
         if (!record.takenAt) record.takenAt = now;
       } else {
@@ -2091,9 +2572,12 @@
     var name = trim($('medName').value);
     var slots = Number($('medSlots').value);
     var time = $('medTime').value || '21:00';
-    var packStartDate = $('medStart').value || todayKey();
-    var packNoValue = Math.max(1, Number($('medPackNo').value) || 1);
+    var existingMed = state.medication;
+    var packStartDate = existingMed ? (existingMed.packStart || existingMed.startDate || todayKey()) : todayKey();
+    var packNoValue = existingMed ? Math.max(1, Number(existingMed.packNo) || 1) : 1;
     var hasBreak = $('medBreakSwitch').getAttribute('aria-pressed') !== 'false';
+    var midway = $('medMidwaySwitch').getAttribute('aria-pressed') === 'true';
+    var firstPill = midway ? Math.max(2, Math.min(slots, Number($('medStartPill').value) || 2)) : 1;
     var missedRaw = $('medMissed').value;
     var missedAfter = missedRaw === 'next_day' ? 'next_day' : Math.min(24, Math.max(1, Number(missedRaw) || 2));
     var note = trim($('medNote').value);
@@ -2122,10 +2606,12 @@
       missedAfter: missedAfter,
       startDate: packStartDate,
       packStart: packStartDate,
+      startPill: firstPill,
       packNo: packNoValue,
       hasBreak: hasBreak,
       note: note,
-      pauses: keepPauses
+      pauses: keepPauses,
+      leaflet: (existingMed && Array.isArray(existingMed.leaflet)) ? existingMed.leaflet.slice() : []
     };
 
     if (state.blister.size !== slots) {
@@ -2329,6 +2815,206 @@
     }
   }
 
+  /* ========================================================= 数据备份 / 恢复 */
+
+  /* 备份只含文字记录与档案，剔除照片（base64 体积大），照片仍留在本机 */
+  function buildBackup() {
+    var data = normalizeState(state);
+    if (data.medication) data.medication.leaflet = [];
+    Object.keys(data.records).forEach(function (key) {
+      if (data.records[key]) data.records[key].photo = '';
+    });
+    return JSON.stringify({
+      app: 'yaoyao',
+      kind: 'backup',
+      version: 5,
+      exportedAt: new Date().toISOString(),
+      data: data
+    });
+  }
+
+  function openBackup() {
+    if (!state.medication && !Object.keys(state.records).length) {
+      toast('还没有记录可备份');
+      return;
+    }
+    var json = buildBackup();
+    showSheet('<h3>备份数据</h3>' +
+      '<p class="sheet-sub">把下面这段文本复制，保存到备忘录或文件传输助手。换手机、清理数据前建议先备份。</p>' +
+      '<p class="sheet-sub">备份包含药品档案和全部文字记录，不含照片；照片仍只保存在本机。</p>' +
+      '<textarea id="backupText" rows="6" readonly>' + esc(json) + '</textarea>' +
+      '<button class="btn primary block" data-action="copy-backup">复制备份文本</button>' +
+      '<button class="btn ghost block" data-action="close-sheet">关闭</button>');
+  }
+
+  function copyBackup() {
+    var el = $('backupText');
+    if (!el) return;
+    el.focus();
+    el.select();
+    if (el.setSelectionRange) el.setSelectionRange(0, el.value.length);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
+    toast(ok ? '备份文本已复制，请粘贴到备忘录保存' : '请长按文本全选后手动复制');
+  }
+
+  function openImport() {
+    showSheet('<h3>恢复数据</h3>' +
+      '<p class="sheet-sub">粘贴之前复制的备份文本。恢复会覆盖本机现有的档案和记录，本机已有照片若不在备份中会丢失，建议先备份当前数据。</p>' +
+      '<textarea id="importText" rows="6" placeholder="长按粘贴备份文本"></textarea>' +
+      '<button class="btn primary block" data-action="confirm-import">确认恢复并覆盖</button>' +
+      '<button class="btn ghost block" data-action="close-sheet">取消</button>');
+  }
+
+  function importBackup() {
+    var el = $('importText');
+    var raw = el ? trim(el.value) : '';
+    if (!raw) {
+      toast('请先粘贴备份文本');
+      return;
+    }
+    var parsed = null;
+    try { parsed = JSON.parse(raw); } catch (err) { parsed = null; }
+    if (!parsed || parsed.app !== 'yaoyao' || !parsed.data || typeof parsed.data !== 'object') {
+      toast('这不是药药的备份文本，请检查后重试');
+      return;
+    }
+    state = normalizeState(parsed.data);
+    state.settings.onboarded = true;
+    persist().then(function (ok) {
+      closeSheet();
+      renderAll();
+      switchPage('home');
+      toast(ok === false ? '已恢复到当前页面，但本机保存失败，请重试' : '恢复成功，记录已找回');
+    });
+  }
+
+  /* ========================================================= 说明书照片 */
+
+  function leafletThumbsHtml() {
+    var med = state.medication;
+    var list = med && Array.isArray(med.leaflet) ? med.leaflet : [];
+    if (!list.length) return '';
+    var html = '';
+    for (var i = 0; i < list.length; i++) {
+      html += '<div class="leaflet-thumb">' +
+        '<img src="' + esc(list[i]) + '" alt="说明书照片 ' + (i + 1) + '" data-action="leaflet-view" data-index="' + i + '">' +
+        '<button type="button" class="leaflet-del" data-action="leaflet-remove" data-index="' + i + '" aria-label="删除第 ' + (i + 1) + ' 张说明书照片">×</button>' +
+        '</div>';
+    }
+    return html;
+  }
+
+  function renderLeafletPage() {
+    var med = state.medication;
+    var lead = $('leafletLead');
+    var grid = $('leafletGrid');
+    var empty = $('leafletEmpty');
+    if (lead) {
+      if (!med) lead.textContent = '先建立药品档案，再拍照保存说明书。';
+      else {
+        var n = (med.leaflet || []).length;
+        lead.textContent = n
+          ? ('已保存 ' + n + ' 张说明书照片，可继续添加或删除重拍。')
+          : '拍照保存药品说明书，关键信息随时能看。';
+      }
+    }
+    var html = leafletThumbsHtml();
+    if (grid) grid.innerHTML = html;
+    if (empty) empty.hidden = !!html;
+  }
+
+  function renderLeafletEditor() {
+    var grid = $('medLeafletGrid');
+    var empty = $('medLeafletEmpty');
+    if (!grid) return;
+    var html = leafletThumbsHtml();
+    grid.innerHTML = html;
+    if (empty) empty.hidden = !!html;
+  }
+
+  function openLeaflet() {
+    if (!state.medication) {
+      renderMedForm();
+      switchPage('med');
+      toast('先建立药品档案，再拍照保存说明书');
+      return;
+    }
+    view.fromPage = view.page;
+    renderLeafletPage();
+    switchPage('leaflet');
+  }
+
+  function handleLeafletFile(file) {
+    if (!file) return;
+    if (file.type && file.type.indexOf('image/') !== 0) { toast('请选择图片文件'); return; }
+    if (!state.medication) { toast('先建立药品档案'); return; }
+    toast('正在添加说明书照片…');
+    compressImage(file, function (dataUrl) {
+      if (!dataUrl) { toast('图片处理失败，请重试'); return; }
+      addLeafletPhoto(dataUrl);
+    });
+  }
+
+  function addLeafletPhoto(dataUrl) {
+    if (!state.medication) return;
+    var finish = function (ref) {
+      if (!state.medication) return;
+      if (!Array.isArray(state.medication.leaflet)) state.medication.leaflet = [];
+      state.medication.leaflet.push(ref);
+      persist().then(function () {
+        renderLeafletPage();
+        renderLeafletEditor();
+        renderProfile();
+        toast('已添加说明书照片');
+      });
+    };
+    if (platform.fs) {
+      saveLeafletPhoto(dataUrl).then(finish);
+    } else {
+      finish(dataUrl);
+    }
+  }
+
+  function saveLeafletPhoto(dataUrl) {
+    if (!platform.fs) return Promise.resolve('');
+    var base64 = dataUrl.indexOf(',') > -1 ? dataUrl.split(',')[1] : dataUrl;
+    var dir = platform.userDataPath + '/leaflet';
+    var filePath = dir + '/leaflet_' + Date.now() + '_' + Math.floor(Math.random() * 1000) + '.jpg';
+    return platform.mt.mkdir({ dirPath: dir, recursive: true }).then(null, function () {
+      return null;
+    }).then(function () {
+      return platform.mt.writeFile({ filePath: filePath, data: base64, encoding: 'base64' });
+    }).then(function () {
+      return filePath;
+    }, function () {
+      toast('照片保存失败，请重试');
+      return '';
+    });
+  }
+
+  function removeLeafletPhoto(index) {
+    var med = state.medication;
+    if (!med || !Array.isArray(med.leaflet) || index < 0 || index >= med.leaflet.length) return;
+    med.leaflet.splice(index, 1);
+    persist().then(function () {
+      renderLeafletPage();
+      renderLeafletEditor();
+      renderProfile();
+      toast('已删除');
+    });
+  }
+
+  function viewLeafletPhoto(index) {
+    var med = state.medication;
+    var ref = med && Array.isArray(med.leaflet) ? med.leaflet[index] : '';
+    if (!ref) { toast('照片加载失败'); return; }
+    showSheet('<h3>说明书照片</h3>' +
+      '<p class="sheet-sub">第 ' + (index + 1) + ' 张 · 可在说明书页删除或重拍</p>' +
+      '<img src="' + esc(ref) + '" alt="说明书照片">' +
+      '<button class="btn ghost block" data-action="close-sheet">关闭</button>');
+  }
+
   /* ========================================================= 事件 */
 
   function bindEvents() {
@@ -2336,18 +3022,26 @@
 
     $('cameraInput').addEventListener('change', function (event) {
       var file = event.target.files && event.target.files[0];
-      handleFile(file);
+      if (view.captureTarget === 'leaflet') handleLeafletFile(file);
+      else handleFile(file);
+      view.captureTarget = 'checkin';
       event.target.value = '';
     });
 
     $('albumInput').addEventListener('change', function (event) {
       var file = event.target.files && event.target.files[0];
-      handleFile(file);
+      if (view.captureTarget === 'leaflet') handleLeafletFile(file);
+      else handleFile(file);
+      view.captureTarget = 'checkin';
       event.target.value = '';
     });
 
     $('bodyOther').addEventListener('input', function () {
       view.bodyOther = this.value;
+    });
+
+    $('medSlots').addEventListener('change', function () {
+      renderMedStartPill($('medStartPill').value);
     });
 
     $('sheetMask').addEventListener('click', function (event) {
@@ -2400,6 +3094,12 @@
     switch (action) {
       case 'start-checkin':
         startCheckin();
+        break;
+      case 'break-checkin':
+        openBreakCheckin();
+        break;
+      case 'save-break-checkin':
+        saveRecord('not_taken');
         break;
       case 'view-today':
         viewToday();
@@ -2511,6 +3211,28 @@
       case 'back-profile':
         switchPage('profile');
         break;
+      case 'back-leaflet':
+        switchPage(view.fromPage || 'home');
+        break;
+      case 'open-leaflet':
+        openLeaflet();
+        break;
+      case 'leaflet-camera':
+        if (!state.medication) { renderMedForm(); switchPage('med'); toast('先建立药品档案'); break; }
+        view.captureTarget = 'leaflet';
+        $('cameraInput').click();
+        break;
+      case 'leaflet-album':
+        if (!state.medication) { renderMedForm(); switchPage('med'); toast('先建立药品档案'); break; }
+        view.captureTarget = 'leaflet';
+        $('albumInput').click();
+        break;
+      case 'leaflet-view':
+        viewLeafletPhoto(Number(node.getAttribute('data-index')));
+        break;
+      case 'leaflet-remove':
+        removeLeafletPhoto(Number(node.getAttribute('data-index')));
+        break;
       case 'open-med':
         renderMedForm();
         switchPage('med');
@@ -2543,6 +3265,7 @@
           state.medication.packNo = packNo() + 1;
           state.medication.packStart = todayKey();
           state.medication.startDate = todayKey();
+          state.medication.startPill = 1;
         }
         state.blister.taken = [];
         persist().then(function () {
@@ -2550,6 +3273,14 @@
           renderAll();
           toast('已换到第 ' + packNo() + ' 板');
         });
+        break;
+      case 'toggle-med-midway':
+        var midwaySw = $('medMidwaySwitch');
+        var midwayOn = midwaySw.getAttribute('aria-pressed') !== 'true';
+        midwaySw.className = 'switch' + (midwayOn ? ' is-on' : '');
+        midwaySw.setAttribute('aria-pressed', midwayOn ? 'true' : 'false');
+        $('medStartPillWrap').hidden = !midwayOn;
+        if (midwayOn) renderMedStartPill($('medStartPill').value);
         break;
       case 'toggle-med-break':
         var breakSw = $('medBreakSwitch');
@@ -2597,6 +3328,25 @@
         break;
       case 'export-data':
         exportData();
+        break;
+      case 'backup-data':
+        openBackup();
+        break;
+      case 'copy-backup':
+        copyBackup();
+        break;
+      case 'import-data':
+        openImport();
+        break;
+      case 'confirm-import':
+        importBackup();
+        break;
+      case 'welcome-med':
+        finishWelcome();
+        switchPage('med');
+        break;
+      case 'welcome-skip':
+        finishWelcome();
         break;
       case 'clear-data':
         confirmClear();
@@ -2657,6 +3407,7 @@
       renderAll();
       switchPage('home');
       hideLoading();
+      maybeWelcome();
     }, function () {
       view.loadError = true;
       renderAll();

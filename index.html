@@ -200,6 +200,7 @@
         </div>
         <h1 id="todayTitle">今天还没有记录</h1>
         <p class="lead" id="todayLead">拍一张药板照片，再由你确认今天的服药情况。</p>
+        <div class="today-reminders" id="todayReminders" hidden></div>
         <div class="hero-foot" id="heroFoot" hidden>
           <button class="link-btn hero-secondary" data-action="view-today" id="todaySecondary" hidden>查看今天的记录</button>
           <div class="record-switch" id="recordSwitch" hidden>
@@ -229,6 +230,7 @@
           <span><i class="dot missed"></i>漏服</span>
           <span><i class="dot pink"></i>不确定</span>
           <span><i class="dot breakday"></i>无需服药</span>
+          <span id="unrecordedLegend" hidden><i class="dot unrecorded"></i>之前未记录</span>
         </div>
         <div class="break-wrap" id="breakWrap" hidden>
           <div class="break-head"><span>停药期 · 7 天</span><span>无需服药</span></div>
@@ -302,9 +304,26 @@
           <span class="corner bl"></span>
           <span class="corner br"></span>
           <div class="frame-inner">
-            <span class="frame-ico">◎</span>
-            <strong>把整板放进框内</strong>
-            <p>点击使用后置摄像头拍摄</p>
+            <svg class="blister-guide" viewBox="0 0 260 124" role="img" aria-label="21 片 U 形药板对齐示意">
+              <rect x="4" y="4" width="252" height="116" rx="18" class="guide-board"></rect>
+              <path d="M18 24H242V100H18" class="guide-u"></path>
+              <g class="guide-pills">
+                <circle cx="18" cy="24" r="8"></circle><circle cx="43" cy="24" r="8"></circle>
+                <circle cx="68" cy="24" r="8"></circle><circle cx="93" cy="24" r="8"></circle>
+                <circle cx="118" cy="24" r="8"></circle><circle cx="143" cy="24" r="8"></circle>
+                <circle cx="168" cy="24" r="8"></circle><circle cx="193" cy="24" r="8"></circle>
+                <circle cx="218" cy="24" r="8"></circle><circle cx="242" cy="24" r="8"></circle>
+                <circle cx="242" cy="62" r="8"></circle>
+                <circle cx="18" cy="100" r="8"></circle><circle cx="43" cy="100" r="8"></circle>
+                <circle cx="68" cy="100" r="8"></circle><circle cx="93" cy="100" r="8"></circle>
+                <circle cx="118" cy="100" r="8"></circle><circle cx="143" cy="100" r="8"></circle>
+                <circle cx="168" cy="100" r="8"></circle><circle cx="193" cy="100" r="8"></circle>
+                <circle cx="218" cy="100" r="8"></circle><circle cx="242" cy="100" r="8"></circle>
+              </g>
+              <text x="118" y="67" text-anchor="middle" class="guide-text">21 片 U 形药板</text>
+            </svg>
+            <strong>把药板放平，对齐这个形状</strong>
+            <p>21 个药位完整入镜 · 点击直接打开后置相机</p>
           </div>
         </div>
 
@@ -439,30 +458,64 @@
         <p class="lead">点日期查看当天的照片、药位标记和确认结果。</p>
       </div>
 
-      <section class="card">
+      <section class="card calendar-card">
         <div class="cal-head">
           <button class="cal-nav" data-action="prev-month" aria-label="上个月">‹</button>
-          <strong id="calTitle">--</strong>
+          <div class="cal-title-wrap">
+            <strong id="calTitle">--</strong>
+            <span id="calRange">--</span>
+          </div>
           <button class="cal-nav" data-action="next-month" aria-label="下个月">›</button>
         </div>
         <div class="cal-grid" id="calGrid"></div>
-        <div class="legend">
-          <span><i class="dot taken"></i>已确认服用</span>
-          <span><i class="dot not-taken"></i>尚未服用</span>
-          <span><i class="dot uncertain"></i>不确定</span>
+        <div class="legend calendar-legend">
+          <span><i class="dot taken"></i>已服</span>
+          <span><i class="dot pending"></i>待服</span>
+          <span><i class="dot missed"></i>漏服</span>
+          <span><i class="dot pink"></i>不确定</span>
+          <span><i class="dot breakday"></i>停药</span>
           <span><i class="dot none"></i>未记录</span>
         </div>
       </section>
 
       <section class="card">
         <div class="card-head">
-          <h2>本月概况</h2>
+          <h2>记录总览</h2>
           <button class="link-btn" data-action="goto-today">回到今天</button>
         </div>
+        <div class="metric-grid" id="recordOverview"></div>
         <div class="month-summary" id="monthSummary"></div>
       </section>
 
-      <p class="foot-note">药板上过去的服药日如果没有记录，会按漏服显示；日历里的格子只反映你确认过的记录。</p>
+      <section class="card">
+        <div class="card-head">
+          <h2>月度趋势</h2>
+          <span class="card-side" id="chartYear">--</span>
+        </div>
+        <div class="chart-legend">
+          <span><i class="dot taken"></i>已服</span>
+          <span><i class="dot missed"></i>漏服</span>
+          <span><i class="dot pink"></i>不确定</span>
+        </div>
+        <div class="month-chart" id="monthChart"></div>
+        <div class="subsection-head">按年份统计</div>
+        <div class="year-chart" id="yearChart"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h2>身体状态与不良反应</h2></div>
+        <div class="metric-grid metric-grid-three" id="bodyOverview"></div>
+        <div class="subsection-head">按不良反应类型</div>
+        <div class="reaction-chart" id="reactionChart"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h2>按服药周期</h2></div>
+        <div id="cycleSummary"></div>
+        <div class="cycle-list" id="cycleStats"></div>
+      </section>
+
+      <p class="foot-note">日历展示当前月及前后各 15 天。同一板药的有效服药日用连续色块串联；统计排除停药期和手动停药日，身体状态单独统计。</p>
     </section>
 
     <!-- ==================== 历史详情 ==================== -->
@@ -528,6 +581,11 @@
           <span class="menu-text"><strong>药品管理</strong><span id="menuMedDesc">名称、药位数、服药时间</span></span>
           <span class="menu-arrow">›</span>
         </button>
+        <button class="menu-item" data-action="open-leaflet">
+          <span class="menu-ico">说</span>
+          <span class="menu-text"><strong>说明书</strong><span id="menuLeafletDesc">拍照保存，随时查看</span></span>
+          <span class="menu-arrow">›</span>
+        </button>
         <button class="menu-item" data-nav="settings">
           <span class="menu-ico">铃</span>
           <span class="menu-text"><strong>提醒管理</strong><span id="menuReminderDesc">打开药药时提示</span></span>
@@ -540,6 +598,16 @@
         <button class="menu-item" data-action="export-data">
           <span class="menu-ico">图</span>
           <span class="menu-text"><strong>数据导出</strong><span>生成近 7 天记录图片，保存到相册</span></span>
+          <span class="menu-arrow">›</span>
+        </button>
+        <button class="menu-item" data-action="backup-data">
+          <span class="menu-ico">备</span>
+          <span class="menu-text"><strong>备份数据</strong><span>复制备份文本，含全部记录与档案（不含照片）</span></span>
+          <span class="menu-arrow">›</span>
+        </button>
+        <button class="menu-item" data-action="import-data">
+          <span class="menu-ico">恢</span>
+          <span class="menu-text"><strong>恢复数据</strong><span>粘贴备份文本，换机或清理后找回记录</span></span>
           <span class="menu-arrow">›</span>
         </button>
         <button class="menu-item is-danger" data-action="clear-data">
@@ -614,6 +682,17 @@
         </div>
         <div class="switch-row">
           <div class="switch-copy">
+            <strong>从中途开始记录</strong>
+            <p>已经在吃这一板？选择开始日期对应的药片，之前的药位显示为灰色未记录。</p>
+          </div>
+          <button class="switch" id="medMidwaySwitch" data-action="toggle-med-midway" aria-pressed="false" aria-label="从中途开始记录"></button>
+        </div>
+        <div class="field" id="medStartPillWrap" hidden>
+          <label for="medStartPill">开始日期对应第几片</label>
+          <select id="medStartPill"></select>
+        </div>
+        <div class="switch-row">
+          <div class="switch-copy">
             <strong>有 7 天停药期</strong>
             <p>21 片服完后停药 7 天，首页药板下方会显示停药期。连续服药可以关闭。</p>
           </div>
@@ -632,16 +711,6 @@
           </select>
           <p class="help">超过这里设定的时间还没记录，首页会显示漏服多久。</p>
         </div>
-        <div class="field-row">
-          <div class="field">
-            <label for="medPackNo">当前板号</label>
-            <input id="medPackNo" type="number" min="1" max="99" value="1">
-          </div>
-          <div class="field">
-            <label for="medStart">本板第 1 片日期</label>
-            <input id="medStart" type="date">
-          </div>
-        </div>
         <div class="field">
           <label for="medNote">备注（可选）</label>
           <textarea id="medNote" rows="2" placeholder="例如：第几板、医生或药师交代的事项" maxlength="80"></textarea>
@@ -651,10 +720,52 @@
       </section>
 
       <section class="card">
+        <div class="card-head">
+          <div>
+            <span class="eyebrow">LEAFLET</span>
+            <h2>说明书照片</h2>
+            <p class="muted">拍下来随时查看，可拍多张，也能删除重拍。</p>
+          </div>
+        </div>
+        <div class="leaflet-grid" id="medLeafletGrid"></div>
+        <div class="leaflet-empty" id="medLeafletEmpty" hidden>
+          <p>还没有说明书照片</p>
+          <p class="muted">拍一张说明书，用法用量随时能看。</p>
+        </div>
+        <div class="btn-row">
+          <button class="btn primary" data-action="leaflet-camera">拍照添加</button>
+          <button class="btn ghost" data-action="leaflet-album">从相册选择</button>
+        </div>
+        <p class="help">照片只保存在这台设备，不会上传。</p>
+      </section>
+
+      <section class="card">
         <h2>药板进度</h2>
         <p class="muted" id="medBlisterText">第 1 板 · 已服 0 / 21</p>
         <button class="btn ghost block" data-action="new-blister">换到下一板（从今天开始）</button>
         <p class="help">换新板会把板号 +1、本板开始日期改为今天，历史记录与照片不受影响。</p>
+      </section>
+    </section>
+
+    <!-- ==================== 说明书 ==================== -->
+    <section class="page" data-page="leaflet">
+      <div class="page-head">
+        <button class="link-btn" data-action="back-leaflet">‹ 返回</button>
+        <span class="eyebrow">LEAFLET</span>
+        <h1>说明书</h1>
+        <p class="lead" id="leafletLead">拍照保存药品说明书，关键信息随时能看。</p>
+      </div>
+      <section class="card">
+        <div class="leaflet-grid" id="leafletGrid"></div>
+        <div class="leaflet-empty" id="leafletEmpty" hidden>
+          <p>还没有说明书照片</p>
+          <p class="muted">拍一张说明书，用法用量随时查看，不怕丢。</p>
+        </div>
+        <div class="btn-row">
+          <button class="btn primary" data-action="leaflet-camera">拍照添加</button>
+          <button class="btn ghost" data-action="leaflet-album">从相册选择</button>
+        </div>
+        <p class="help">照片只保存在这台设备，不会上传。点照片可放大查看，点右上角可删除重拍。</p>
       </section>
     </section>
 
@@ -688,6 +799,16 @@
         <button class="menu-item" data-action="export-data">
           <span class="menu-ico">图</span>
           <span class="menu-text"><strong>数据导出</strong><span>生成近 7 天记录图片</span></span>
+          <span class="menu-arrow">›</span>
+        </button>
+        <button class="menu-item" data-action="backup-data">
+          <span class="menu-ico">备</span>
+          <span class="menu-text"><strong>备份数据</strong><span>复制备份文本，含全部记录与档案（不含照片）</span></span>
+          <span class="menu-arrow">›</span>
+        </button>
+        <button class="menu-item" data-action="import-data">
+          <span class="menu-ico">恢</span>
+          <span class="menu-text"><strong>恢复数据</strong><span>粘贴备份文本，换机或清理后找回记录</span></span>
           <span class="menu-arrow">›</span>
         </button>
         <button class="menu-item is-danger" data-action="clear-data">
