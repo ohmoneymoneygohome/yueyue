@@ -46,6 +46,9 @@
     dayKey: '',
     dayDraft: '',
     devDate: '',
+    skipPhoto: false,
+    body: [],
+    bodyOther: '',
     loadError: false
   };
 
@@ -288,6 +291,10 @@
           pillStates: item.pillStates && typeof item.pillStates === 'object' ? item.pillStates : {},
           changed: Array.isArray(item.changed) ? item.changed : [],
           quality: item.quality || null,
+          body: item.body && typeof item.body === 'object' ? {
+            reactions: Array.isArray(item.body.reactions) ? item.body.reactions : [],
+            note: item.body.note || ''
+          } : null,
           takenAt: item.takenAt || '',
           createdAt: item.createdAt || '',
           updatedAt: item.updatedAt || ''
@@ -1038,6 +1045,7 @@
       pillStates: prev.pillStates || {},
       changed: prev.changed || [],
       quality: prev.quality || null,
+      body: prev.body || null,
       takenAt: status === 'taken' ? (prev.takenAt || now) : '',
       createdAt: prev.createdAt || now,
       updatedAt: now
@@ -1190,19 +1198,62 @@
 
   function renderCheckin() {
     var hasPhoto = !!view.photoData;
-    $('captureStep').hidden = hasPhoto;
-    $('previewStep').hidden = !hasPhoto;
+    var showPreview = hasPhoto || view.skipPhoto;
+    $('captureStep').hidden = showPreview;
+    $('previewStep').hidden = !showPreview;
 
     var last = previousPhotoBefore(todayKey());
     $('lastPhotoBtn').hidden = !last;
 
-    if (!hasPhoto) return;
+    $('previewTitle').textContent = hasPhoto ? '照片预览' : '今天的记录';
+    $('qualityBadge').hidden = !hasPhoto;
+    $('qualityCard').hidden = !hasPhoto;
+    $('previewShot').hidden = !hasPhoto;
+    $('markPillsBtn').hidden = !hasPhoto;
+
+    var retake = $('retakeBtn');
+    retake.textContent = hasPhoto ? '重新拍摄' : '去拍照';
+    retake.setAttribute('data-action', hasPhoto ? 'retake' : 'open-camera');
 
     var img = $('photoPreview');
-    img.src = view.photoData;
-    img.hidden = false;
+    if (hasPhoto) {
+      img.src = view.photoData;
+      img.hidden = false;
+    } else {
+      img.removeAttribute('src');
+      img.hidden = true;
+    }
 
-    renderQuality();
+    renderBody();
+    if (hasPhoto) renderQuality();
+  }
+
+  function renderBody() {
+    var chips = $('bodyChips');
+    if (!chips) return;
+    var good = view.body.length === 0;
+    var buttons = chips.querySelectorAll('button');
+    for (var i = 0; i < buttons.length; i++) {
+      var key = buttons[i].getAttribute('data-body');
+      var on = key === 'good' ? good : view.body.indexOf(key) > -1;
+      buttons[i].className = 'body-chip' + (on ? ' is-on' : '');
+    }
+    var otherOn = view.body.indexOf('其他') > -1;
+    $('bodyOtherWrap').hidden = !otherOn;
+    $('bodyOther').value = otherOn ? view.bodyOther : '';
+  }
+
+  function pickBody(key) {
+    if (key === 'good') {
+      view.body = [];
+      view.bodyOther = '';
+    } else {
+      var i = view.body.indexOf(key);
+      if (i > -1) view.body.splice(i, 1);
+      else view.body.push(key);
+      if (view.body.indexOf('其他') === -1) view.bodyOther = '';
+    }
+    renderBody();
   }
 
   function renderQuality() {
@@ -1461,6 +1512,21 @@
       return '<span>' + esc(t) + '</span>';
     }).join('');
 
+    var body = record && record.body;
+    var bodyBox = $('dayBody');
+    if (!body) {
+      bodyBox.innerHTML = '<p class="body-empty">这一天没有记录身体状况。</p>';
+    } else if (!body.reactions || !body.reactions.length) {
+      bodyBox.innerHTML = '<span class="body-tag is-good">良好</span>';
+    } else {
+      var bodyHtml = '';
+      body.reactions.forEach(function (r) {
+        bodyHtml += '<span class="body-tag">' +
+          esc(r === '其他' && body.note ? '其他 · ' + body.note : r) + '</span>';
+      });
+      bodyBox.innerHTML = bodyHtml;
+    }
+
     var shot = $('dayShot');
     if (record && record.photo) {
       shot.innerHTML = '<img src="' + esc(record.photo) + '" alt="当日药板照片">';
@@ -1604,6 +1670,11 @@
     view.pillStates = {};
     view.changed = [];
     view.status = record ? record.status : '';
+    view.skipPhoto = false;
+    view.body = record && record.body && Array.isArray(record.body.reactions)
+      ? record.body.reactions.slice()
+      : [];
+    view.bodyOther = record && record.body && record.body.note ? record.body.note : '';
 
     renderCheckin();
     switchPage('checkin');
@@ -1889,6 +1960,7 @@
       }
       view.photoData = dataUrl;
       view.existingPhoto = '';
+      view.skipPhoto = false;
       view.quality = quality;
       view.crops = [];
       buildCrops(dataUrl, blisterSize(), function (crops) {
@@ -1941,6 +2013,10 @@
         quality: view.quality
           ? { score: view.quality.score, label: view.quality.label, issues: view.quality.issues }
           : (previous.quality || null),
+        body: {
+          reactions: view.body.slice(),
+          note: trim(view.bodyOther)
+        },
         takenAt: view.status === 'taken' ? (previous.takenAt || now) : '',
         createdAt: previous.createdAt || now,
         updatedAt: now
@@ -1951,6 +2027,7 @@
         btn.textContent = '保存这一天的记录';
         view.photoData = '';
         view.crops = [];
+        view.skipPhoto = false;
         renderAll();
         switchPage('home');
         if (ok) {
@@ -1985,6 +2062,7 @@
         pillStates: {},
         changed: [],
         quality: null,
+        body: null,
         takenAt: status === 'taken' ? now : '',
         createdAt: now,
         updatedAt: now
@@ -2268,6 +2346,10 @@
       event.target.value = '';
     });
 
+    $('bodyOther').addEventListener('input', function () {
+      view.bodyOther = this.value;
+    });
+
     $('sheetMask').addEventListener('click', function (event) {
       if (event.target === $('sheetMask')) closeSheet();
     });
@@ -2332,7 +2414,15 @@
         view.photoData = '';
         view.quality = null;
         view.crops = [];
+        view.skipPhoto = false;
         renderCheckin();
+        break;
+      case 'skip-photo':
+        view.skipPhoto = true;
+        renderCheckin();
+        break;
+      case 'body-pick':
+        pickBody(node.getAttribute('data-body'));
         break;
       case 'confirm-photo':
         if (!view.photoData) {
@@ -2347,22 +2437,22 @@
         toast('请逐格标记药位外观');
         break;
       case 'confirm-taken':
-        if (!view.photoData) {
-          toast('请先拍摄或选择一张照片');
+        if (!view.photoData && !view.skipPhoto) {
+          toast('请先拍照，或选择不拍照直接记录');
           return;
         }
         saveRecord('taken');
         break;
       case 'confirm-not-taken':
-        if (!view.photoData) {
-          toast('请先拍摄或选择一张照片');
+        if (!view.photoData && !view.skipPhoto) {
+          toast('请先拍照，或选择不拍照直接记录');
           return;
         }
         saveRecord('not_taken');
         break;
       case 'confirm-uncertain':
-        if (!view.photoData) {
-          toast('请先拍摄或选择一张照片');
+        if (!view.photoData && !view.skipPhoto) {
+          toast('请先拍照，或选择不拍照直接记录');
           return;
         }
         saveRecord('uncertain');

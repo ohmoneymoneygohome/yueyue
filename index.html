@@ -276,8 +276,8 @@
       <div class="page-head">
         <button class="link-btn" data-nav="home">‹ 返回首页</button>
         <span class="eyebrow">CHECK IN</span>
-        <h1>每日拍照</h1>
-        <p class="lead">拍一张完整药板，点「确认已服用」就能完成今天的记录。</p>
+        <h1>每日打卡</h1>
+        <p class="lead">拍一张药板照片，或直接记录今天的服药情况和身体状况。</p>
       </div>
 
       <section class="card" id="captureStep">
@@ -313,6 +313,7 @@
           <button class="btn ghost" data-action="open-album">从相册选择</button>
         </div>
         <button class="link-btn block-link" id="lastPhotoBtn" data-action="view-last-photo" hidden>查看上次拍摄的照片</button>
+        <button class="link-btn block-link" data-action="skip-photo">不拍照，只记录身体状况</button>
         <p class="help">照片只写入这台设备的药药沙箱，不会上传。</p>
       </section>
 
@@ -320,14 +321,14 @@
         <div class="card-head">
           <div>
             <span class="eyebrow">PREVIEW</span>
-            <h2>照片预览</h2>
+            <h2 id="previewTitle">照片预览</h2>
           </div>
           <span class="quality-badge" id="qualityBadge">检查中</span>
         </div>
-        <div class="preview-shot">
+        <div class="preview-shot" id="previewShot">
           <img id="photoPreview" alt="药板照片" hidden>
         </div>
-        <div class="quality-card">
+        <div class="quality-card" id="qualityCard">
           <div class="quality-top">
             <strong id="qualityLabel">照片质量检查</strong>
             <span id="qualityScore">--</span>
@@ -336,15 +337,31 @@
           <ul class="issue-list" id="qualityIssues"></ul>
           <p class="help" id="qualityHint">正在分析亮度、对比度和清晰度。</p>
         </div>
+        <div class="body-block">
+          <span class="eyebrow">BODY</span>
+          <h2>今天的身体状态</h2>
+          <p class="help">默认为良好。有不适可以多选，方便以后回看和就医时参考。</p>
+          <div class="body-chips" id="bodyChips">
+            <button class="body-chip is-on" data-action="body-pick" data-body="good">良好</button>
+            <button class="body-chip" data-action="body-pick" data-body="痛经">痛经</button>
+            <button class="body-chip" data-action="body-pick" data-body="出血">出血</button>
+            <button class="body-chip" data-action="body-pick" data-body="恶心">恶心</button>
+            <button class="body-chip" data-action="body-pick" data-body="其他">其他</button>
+          </div>
+          <div class="field" id="bodyOtherWrap" hidden>
+            <label for="bodyOther">补充说明</label>
+            <input id="bodyOther" type="text" maxlength="40" placeholder="例如：头晕、乳房胀痛">
+          </div>
+        </div>
         <div class="btn-row">
-          <button class="btn ghost" data-action="retake">重新拍摄</button>
+          <button class="btn ghost" data-action="retake" id="retakeBtn">重新拍摄</button>
           <button class="btn primary" data-action="confirm-taken">确认已服用</button>
         </div>
         <div class="secondary-row">
           <button class="link-btn" data-action="confirm-not-taken">尚未服用</button>
           <button class="link-btn" data-action="confirm-uncertain">我不确定</button>
         </div>
-        <button class="link-btn block-link" data-action="confirm-photo">对照药板逐格标记（可选）</button>
+        <button class="link-btn block-link" data-action="confirm-photo" id="markPillsBtn">对照药板逐格标记（可选）</button>
         <p class="help">确认后会记下当前时间，照片只作为当天凭证保存在本机，不会上传。</p>
       </section>
 
@@ -466,6 +483,12 @@
         <div class="btn-row" id="dayActions" hidden>
           <button class="btn primary" data-action="day-retake">重新拍照记录</button>
         </div>
+      </section>
+
+      <section class="card">
+        <span class="eyebrow">BODY</span>
+        <h2>当日身体状况</h2>
+        <div class="body-tags" id="dayBody"></div>
       </section>
 
       <section class="card" id="dayConfirmCard">

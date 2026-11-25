@@ -1906,3 +1906,68 @@ body {
   background-image: linear-gradient(180deg, #2f4a38, #24392c);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 14px 28px -12px rgba(24, 38, 30, .6);
 }
+
+/* ---------- 身体状况记录 ---------- */
+
+.body-block {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px dashed rgba(76, 112, 89, .18);
+}
+.body-block h2 {
+  margin: 4px 0 6px;
+  font-size: 17px;
+}
+.body-chips {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.body-chip {
+  margin: 0 8px 8px 0;
+  padding: 9px 16px;
+  border: 1px solid rgba(255, 255, 255, .9);
+  border-radius: var(--r-pill);
+  background-color: rgba(255, 255, 255, .66);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .95), rgba(255, 255, 255, .35));
+  box-shadow: inset 0 1px 0 #fff, 0 4px 10px -7px rgba(30, 58, 44, .45);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  transition: transform .15s, box-shadow .2s, background-color .2s;
+}
+.body-chip.is-on {
+  background-color: rgba(201, 221, 204, .92);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .78), rgba(214, 231, 216, .25));
+  color: var(--sage-deep);
+  box-shadow: inset 0 0 0 1px rgba(76, 112, 89, .42), inset 0 1px 0 #fff, 0 6px 12px -8px rgba(35, 64, 48, .5);
+}
+.body-chip:active {
+  transform: scale(.95);
+}
+.body-tags {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.body-tag {
+  margin: 0 8px 8px 0;
+  padding: 7px 13px;
+  border-radius: var(--r-pill);
+  background-color: rgba(236, 205, 191, .55);
+  background-image: linear-gradient(170deg, rgba(255, 255, 255, .6), rgba(236, 205, 191, .2));
+  color: var(--clay-ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+.body-tag.is-good {
+  background-color: rgba(201, 221, 204, .6);
+  background-image: linear-gradient(170deg, rgba(255, 255, 255, .65), rgba(201, 221, 204, .2));
+  color: var(--sage-deep);
+}
+.body-empty {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
