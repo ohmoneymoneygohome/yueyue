@@ -28,7 +28,8 @@
     buildVersion: 0,
     userDataPath: '',
     storage: false,
-    fs: false
+    fs: false,
+    web: false
   };
 
   var state = createDefaultState();
@@ -191,9 +192,25 @@
 
   /* ========================================================= 平台适配 */
 
+  /* Web 兜底存储：小红书容器内不可用 xhs.miniTool 时退到 localStorage（GitHub Pages / 普通浏览器试用） */
+  function webStorageAvailable() {
+    try {
+      if (!window.localStorage) return false;
+      var probeKey = '__yaoyao_probe__';
+      window.localStorage.setItem(probeKey, '1');
+      window.localStorage.removeItem(probeKey);
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
   function detectPlatform() {
     var mt = window.xhs && window.xhs.miniTool;
-    if (!mt) return;
+    if (!mt) {
+      platform.web = webStorageAvailable();
+      return;
+    }
     platform.mt = mt;
     platform.active = true;
     platform.storage = typeof mt.setStorage === 'function' && typeof mt.getStorage === 'function';
@@ -238,7 +255,27 @@
   }
 
   function loadState() {
-    if (!platform.active || !platform.storage) return Promise.resolve(true);
+    if (!platform.active || !platform.storage) {
+      if (platform.web) {
+        var webRaw = null;
+        try {
+          webRaw = window.localStorage.getItem(STORAGE_KEY);
+        } catch (err) {
+          return Promise.resolve(false);
+        }
+        if (webRaw) {
+          try {
+            var webParsed = JSON.parse(webRaw);
+            if (webParsed && (webParsed.version === 2 || webParsed.version === 3 || webParsed.version === 4 || webParsed.version === 5)) {
+              state = normalizeState(webParsed);
+            }
+          } catch (err2) {
+            /* 数据损坏时忽略，使用默认档案 */
+          }
+        }
+      }
+      return Promise.resolve(true);
+    }
     return platform.mt.getStorage({ key: STORAGE_KEY }).then(function (res) {
       var raw = res && res.data;
       if (!raw) return true;
@@ -327,7 +364,14 @@
 
   function persist() {
     if (!platform.active) {
-      return Promise.resolve(false);
+      if (!platform.web) return Promise.resolve(false);
+      try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        return Promise.resolve(true);
+      } catch (err) {
+        toast('浏览器存储写入失败，记录可能没有保存');
+        return Promise.resolve(false);
+      }
     }
     if (!platform.storage) {
       toast('当前客户端不支持本地存储，记录无法保存');
@@ -1366,7 +1410,7 @@
     persist().then(function (ok) {
       renderAll();
       if (ok) toast(shortDate(key) + ' 已记为' + statusText(status));
-      else if (!platform.active) toast('预览模式：测试记录只保留在当前页面');
+      else if (!platform.active && !platform.web) toast('预览模式：测试记录只保留在当前页面');
     });
   }
 
@@ -2512,7 +2556,7 @@
         if (ok) {
           toast(view.status === 'taken' ? '已记下今天的服药时间' : '今天的记录已保存');
         } else if (!platform.active) {
-          toast('预览模式：记录只保留在当前页面');
+          toast('预览模式：当前浏览器无法保存，记录只保留在当前页面');
         }
       });
     };
@@ -2623,7 +2667,7 @@
       renderAll();
       switchPage('home');
       if (ok) toast('药品档案已保存');
-      else if (!platform.active) toast('预览模式：档案只保留在当前页面');
+      else if (!platform.active && !platform.web) toast('预览模式：档案只保留在当前页面');
     });
   }
 
@@ -3398,6 +3442,9 @@
 
     if (!platform.active) {
       $('previewBanner').hidden = false;
+      $('previewBanner').textContent = platform.web
+        ? '浏览器模式 · 记录保存在本浏览器，清理缓存前记得在「我的 → 备份数据」导出'
+        : '预览模式 · 当前浏览器无法保存数据，记录只保留在本页';
     }
 
     initPlatform().then(function () {
